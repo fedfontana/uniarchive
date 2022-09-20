@@ -1,0 +1,14 @@
+{
+    "updateTimer": 60, // optional time in minutes between updates. Defaults to 60.
+    "repos": [
+        {
+            "provider": "github", // optional provider. Defaults to github. Supports github and gitlab.
+            "username": "fedfontana",
+            "repo": "vcc", // this will look at github.com/fedfontana/vcc. Make sure that this repo is public!
+            "as": "vcc", // optional new name for the repository. Defaults to the value of "repo". Useful when two repos from different users have the same name. This gets used in the url.
+            "courseName": "Virtualization and Cloud Computing", // optional long name of the course
+            "branch": "master", // optional branch name. Defaults to main
+            "ignoreFileNames": ["README.md"] // optional list of ignored file names (case insensitive). Defaults to ["README.md"]. If you want to include readmes, just pass [] as option
+        }
+    ]
+}

@@ -25,19 +25,37 @@ export interface BaseDirData {
 export interface BaseFileData {
     filename: string,
     isDir: false,
-    content: string,
+    content: MarkdownFile,
 }
 
 export type DataEntry = BaseDirData | BaseFileData;
 
+//TODO find better names
 export interface DirData {
     isDir: true,
     files: DataEntry[],
     path: string[],
 }
 
+//TODO unify with BaseFileData
 export interface FileData {
     isDir: false,
     path: string[],
-    content: string,
+    content: MarkdownFile,
+}
+
+export interface FrontmatterOptions {
+    lastUpdated?: string,
+    lecture?: {
+      date?: string,
+      topics?: string[],
+      name?: string,
+      professor?: string
+    }
+  }
+
+  
+export interface MarkdownFile {
+    frontmatter: FrontmatterOptions;
+    body: string;
 }

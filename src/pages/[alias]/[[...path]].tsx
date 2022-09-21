@@ -1,8 +1,17 @@
-import { DirData, FileData, Repository, TreeEntry, BaseDirData, BaseFileData, DataEntry } from "$src/types";
 import {
-  GetServerSideProps,
-  InferGetServerSidePropsType,
-} from "next";
+  DirData,
+  FileData,
+  Repository,
+  TreeEntry,
+  BaseDirData,
+  BaseFileData,
+  DataEntry,
+  FrontmatterOptions,
+  MarkdownFile,
+} from "$src/types";
+import { GetServerSideProps, InferGetServerSidePropsType } from "next";
+import frontMatter from "front-matter";
+import Markdown from "$components/Markdown";
 
 interface SuccessProps {
   error: false;
@@ -18,7 +27,16 @@ type Props = SuccessProps | FailureProps;
 const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
   props: Props
 ) => {
-  return <div>{JSON.stringify(props)}</div>;
+  return (
+    <div>
+      <pre>
+        <code>{JSON.stringify(props, undefined, 2)}</code>
+      </pre>
+      {props.error === false && props.data.isDir === false && (
+        <Markdown content={props.data.content.body} />
+      )}
+    </div>
+  );
 };
 
 export default PathPage;
@@ -37,8 +55,6 @@ const repos: Repository[] = [
 ];
 
 export const getServerSideProps: GetServerSideProps = async ({
-  req,
-  res,
   query,
 }) => {
   const alias = query.alias as string;
@@ -79,9 +95,6 @@ export const getServerSideProps: GetServerSideProps = async ({
 function isEntryValid(entry: TreeEntry, repo: Repository): boolean {
   // filter out non .md files
   if (entry.type === "blob" && entry.path.split(".").at(-1) !== "md") {
-    console.log(
-      `Removing entry with path: ${entry.path} because of file extension`
-    );
     return false;
   }
 
@@ -90,9 +103,6 @@ function isEntryValid(entry: TreeEntry, repo: Repository): boolean {
     // if not found indexOf returns -1,
     // else it returns the index of the first letter
     if (entry.path.indexOf(repo.baseDirectory) !== 0) {
-      console.log(
-        `Removing entry with path: ${entry.path} because of base dir`
-      );
       return false;
     }
   }
@@ -105,9 +115,6 @@ function isEntryValid(entry: TreeEntry, repo: Repository): boolean {
   ) {
     const filename = entry.path.split("/").at(-1);
     if (filename === undefined) {
-      console.log(
-        `Removing entry with path: ${entry.path} because of undefined file name`
-      );
       return false;
     }
     if (
@@ -115,9 +122,6 @@ function isEntryValid(entry: TreeEntry, repo: Repository): boolean {
         .map((file) => file.toLowerCase())
         .includes(filename.toLowerCase())
     ) {
-      console.log(
-        `Removing entry with path: ${entry.path} because of ignored file name`
-      );
       return false;
     }
   }
@@ -129,16 +133,16 @@ async function getValidRepoTree(repo: Repository) {
     const apiUrl = `https://api.github.com/repos/${repo.username}/${
       repo.repo
     }/git/trees/${repo.branch ?? "main"}?recursive=1`;
-    console.log("API_URL: ", apiUrl);
     try {
-      const res = await fetch(apiUrl);
-      // , {
-      //   headers: process.env.GITHUB_CLIENT_SECRET ? {
-      //     Authorization: `Bearer ${process.env.GITHUB_CLIENT_SECRET}`
-      //   } : {}
-      // });
+      const res = await fetch(apiUrl, {
+        headers: process.env.GITHUB_TOKEN
+          ? {
+              Authorization: `Token ${process.env.GITHUB_TOKEN}`,
+            }
+          : {},
+      });
+
       if (!res.ok) {
-        console.log("received status: ", res.status);
         throw new Error("NETWORKING");
       }
 
@@ -175,11 +179,6 @@ async function getData(
 
     // if the queried file/dir cannot be found return early
     if (data === undefined) {
-      console.log(
-        `Failed searching for file with path ${
-          repo!.baseDirectory ?? ""
-        }${path.join("/")}`
-      );
       throw new Error("FILE NOT FOUND");
     }
 
@@ -206,7 +205,6 @@ async function getData(
     .filter((entry) => {
       // filter out files that are not in the queried directory
       if (entry.path.indexOf(path ? path.join("/") : "") !== 0) return false;
-      console.log(entry.path, path ? path.join("/") : "");
       return true;
     })
     .map((entry) => {
@@ -230,7 +228,6 @@ async function getData(
 
       return true;
     });
-  console.log("BaseDirData:::", dirData);
 
   //TODO return yml parse prelude of the files instead of the content
 
@@ -257,7 +254,6 @@ async function getData(
       return res.status === "fulfilled";
     })
     .map((v) => (v as PromiseFulfilledResult<DataEntry>).value); //TODO remove any and create better types
-  console.log("returning a dir data ::: ", content);
 
   const dir: DirData = {
     isDir: true,
@@ -272,13 +268,22 @@ async function getData(
 
 // should only be called on blob urls
 // fetches and returns decoded blob found at url
-async function getFileContent(url: string) {
-  const res = await fetch(url);
-  // , {
-  //   headers: process.env.GITHUB_CLIENT_SECRET ? {
-  //     Authorization: `Bearer ${process.env.GITHUB_CLIENT_SECRET}`
-  //   } : {}
-  // });
-  const decoded = await res.json();
-  return Buffer.from(decoded.content, decoded.encoding).toString();
+async function getFileContent(url: string): Promise<MarkdownFile> {
+  const res = await fetch(url, {
+    headers: process.env.GITHUB_TOKEN
+      ? {
+          Authorization: `Token ${process.env.GITHUB_TOKEN}`,
+        }
+      : {},
+  });
+  const encodedFile = await res.json();
+  const decodedFile = Buffer.from(
+    encodedFile.content,
+    encodedFile.encoding
+  ).toString();
+  const parsed = frontMatter<FrontmatterOptions>(decodedFile);
+  return {
+    frontmatter: parsed.attributes,
+    body: parsed.body,
+  };
 }

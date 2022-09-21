@@ -1,41 +1,28 @@
-import { GetServerSideProps, InferGetServerSidePropsType, NextPage } from "next";
+import { DirData, FileData, Repository, TreeEntry, BaseDirData, BaseFileData, DataEntry } from "$src/types";
+import {
+  GetServerSideProps,
+  InferGetServerSidePropsType,
+} from "next";
 
-interface SuccessProps { 
-  error: false,
-  data: DirData | FileData,
+interface SuccessProps {
+  error: false;
+  data: DirData | FileData;
 }
 interface FailureProps {
-  error: true,
-  cause: string, //TODO more fine grained type
+  error: true;
+  cause: string; //TODO more fine grained type
 }
 
 type Props = SuccessProps | FailureProps;
 
-const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (props: Props) => {
+const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
+  props: Props
+) => {
   return <div>{JSON.stringify(props)}</div>;
 };
 
 export default PathPage;
 
-interface Repository {
-  provider?: "github.com" | "gitlab.com";
-  username: string;
-  repo: string;
-  alias?: string;
-  courseName?: string;
-  branch?: string;
-  ignoreFileNames?: string[];
-  baseDirectory?: string;
-}
-
-interface TreeEntry {
-  path: string;
-  mode: string;
-  type: "blob" | "tree";
-  sha: string;
-  size: number;
-  url: string;
-}
 const repos: Repository[] = [
   {
     provider: "github.com", // optional provider. Defaults to github. Supports github and gitlab.
@@ -48,20 +35,6 @@ const repos: Repository[] = [
     baseDirectory: "",
   },
 ];
-
-
-interface BaseDirData {
-  filename: string,
-  isDir: true,
-}
-interface BaseFileData {
-  filename: string,
-  isDir: false,
-  content: string,
-}
-
-type DataEntry = BaseDirData | BaseFileData;
-
 
 export const getServerSideProps: GetServerSideProps = async ({
   req,
@@ -106,7 +79,9 @@ export const getServerSideProps: GetServerSideProps = async ({
 function isEntryValid(entry: TreeEntry, repo: Repository): boolean {
   // filter out non .md files
   if (entry.type === "blob" && entry.path.split(".").at(-1) !== "md") {
-    console.log(`Removing entry with path: ${entry.path} because of file extension`)
+    console.log(
+      `Removing entry with path: ${entry.path} because of file extension`
+    );
     return false;
   }
 
@@ -114,37 +89,46 @@ function isEntryValid(entry: TreeEntry, repo: Repository): boolean {
   if (repo.baseDirectory !== undefined) {
     // if not found indexOf returns -1,
     // else it returns the index of the first letter
-    if (entry.path.indexOf(repo.baseDirectory) !== 0)  {
-      console.log(`Removing entry with path: ${entry.path} because of base dir`)
+    if (entry.path.indexOf(repo.baseDirectory) !== 0) {
+      console.log(
+        `Removing entry with path: ${entry.path} because of base dir`
+      );
       return false;
     }
   }
 
   // filter out ignored files from ignoreFileNames
-  if (entry.type === "blob" && repo.ignoreFileNames && repo.ignoreFileNames.length > 0) {
+  if (
+    entry.type === "blob" &&
+    repo.ignoreFileNames &&
+    repo.ignoreFileNames.length > 0
+  ) {
     const filename = entry.path.split("/").at(-1);
     if (filename === undefined) {
-      console.log(`Removing entry with path: ${entry.path} because of undefined file name`)
+      console.log(
+        `Removing entry with path: ${entry.path} because of undefined file name`
+      );
       return false;
     }
     if (
       repo.ignoreFileNames
-      .map((file) => file.toLowerCase())
-      .includes(filename.toLowerCase())
-      ) {
-
-        console.log(`Removing entry with path: ${entry.path} because of ignored file name`)
-        return false;
-      }
+        .map((file) => file.toLowerCase())
+        .includes(filename.toLowerCase())
+    ) {
+      console.log(
+        `Removing entry with path: ${entry.path} because of ignored file name`
+      );
+      return false;
+    }
   }
   return true;
 }
 
-async function getValidRepoTree(
-  repo: Repository,
-) {
+async function getValidRepoTree(repo: Repository) {
   if (repo.provider === "github.com" || repo.provider === undefined) {
-    const apiUrl = `https://api.github.com/repos/${repo.username}/${repo.repo}/git/trees/${repo.branch ?? "main"}?recursive=1`;
+    const apiUrl = `https://api.github.com/repos/${repo.username}/${
+      repo.repo
+    }/git/trees/${repo.branch ?? "main"}?recursive=1`;
     console.log("API_URL: ", apiUrl);
     try {
       const res = await fetch(apiUrl);
@@ -172,7 +156,6 @@ async function getValidRepoTree(
   }
 }
 
-
 async function getData(
   rootTree: TreeEntry[],
   repo: Repository,
@@ -185,12 +168,18 @@ async function getData(
   if (path !== undefined) {
     // find the info about the file/dir
     data = rootTree.find(
-      (entry) => entry.path === `${repo!.baseDirectory ?? ""}${path.join("/")}` || entry.path === `${repo!.baseDirectory ?? ""}${path.join("/")}.md`
+      (entry) =>
+        entry.path === `${repo!.baseDirectory ?? ""}${path.join("/")}` ||
+        entry.path === `${repo!.baseDirectory ?? ""}${path.join("/")}.md`
     );
 
     // if the queried file/dir cannot be found return early
     if (data === undefined) {
-      console.log(`Failed searching for file with path ${repo!.baseDirectory ?? ""}${path.join("/")}`)
+      console.log(
+        `Failed searching for file with path ${
+          repo!.baseDirectory ?? ""
+        }${path.join("/")}`
+      );
       throw new Error("FILE NOT FOUND");
     }
 
@@ -213,28 +202,35 @@ async function getData(
   }
   // in this case we are dealing with the root of a repo or another nested directory
 
-  let dirData = rootTree.filter(entry => {
-    // filter out files that are not in the queried directory
-    if(entry.path.indexOf(path ? path.join("/") : "") !== 0) return false;
-    console.log(entry.path, path ? path.join("/") : "");
-    return true;
-  }).map(entry => {
-    //const {path, type, url} = entry;
-    const parsedFilename = entry.path.substring((path ? path.join("/") : "").length);
-    return {
-      filename: parsedFilename.startsWith("/") ? parsedFilename.substring(1) : parsedFilename, //remove leading / 
-      isDir: entry.type === "tree",
-      url: entry.url,
-    }
-  }).filter(entry => { 
-    if(entry.filename === "") return false;
-    
-    // filter out files nested inside directories in the queried directories
-    if(entry.filename.split("/").length > 1) return false;
-    
-    return true;
-  });
-    console.log("BaseDirData:::", dirData);
+  let dirData = rootTree
+    .filter((entry) => {
+      // filter out files that are not in the queried directory
+      if (entry.path.indexOf(path ? path.join("/") : "") !== 0) return false;
+      console.log(entry.path, path ? path.join("/") : "");
+      return true;
+    })
+    .map((entry) => {
+      //const {path, type, url} = entry;
+      const parsedFilename = entry.path.substring(
+        (path ? path.join("/") : "").length
+      );
+      return {
+        filename: parsedFilename.startsWith("/")
+          ? parsedFilename.substring(1)
+          : parsedFilename, //remove leading /
+        isDir: entry.type === "tree",
+        url: entry.url,
+      };
+    })
+    .filter((entry) => {
+      if (entry.filename === "") return false;
+
+      // filter out files nested inside directories in the queried directories
+      if (entry.filename.split("/").length > 1) return false;
+
+      return true;
+    });
+  console.log("BaseDirData:::", dirData);
 
   //TODO return yml parse prelude of the files instead of the content
 
@@ -256,9 +252,11 @@ async function getData(
         return fileData;
       })
     )
-  ).filter((res) => {
-    return res.status === "fulfilled";
-  }).map(v => (v as PromiseFulfilledResult<DataEntry>).value);//TODO remove any and create better types 
+  )
+    .filter((res) => {
+      return res.status === "fulfilled";
+    })
+    .map((v) => (v as PromiseFulfilledResult<DataEntry>).value); //TODO remove any and create better types
   console.log("returning a dir data ::: ", content);
 
   const dir: DirData = {
@@ -270,18 +268,6 @@ async function getData(
     files: content,
   };
   return dir;
-}
-
-interface DirData {
-  isDir: true,
-  files: DataEntry[],
-  path: string[],
-}
-
-interface FileData {
-  isDir: false,
-  path: string[],
-  content: string,
 }
 
 // should only be called on blob urls

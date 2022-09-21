@@ -83,7 +83,7 @@ export const getServerSideProps: GetServerSideProps = async ({
 function isEntryValid(entry: TreeEntry, repo: Repository): boolean {
   // filter out non .md files
   if (entry.type === "blob" && entry.path.split(".").at(-1) !== "md") {
-    console.log(`Removing entry: ${entry} because of file extension`)
+    console.log(`Removing entry with path: ${entry.path} because of file extension`)
     return false;
   }
 
@@ -92,7 +92,7 @@ function isEntryValid(entry: TreeEntry, repo: Repository): boolean {
     // if not found indexOf returns -1,
     // else it returns the index of the first letter
     if (entry.path.indexOf(repo.baseDirectory) !== 0)  {
-      console.log(`Removing entry: ${entry} because of base dir`)
+      console.log(`Removing entry with path: ${entry.path} because of base dir`)
       return false;
     }
   }
@@ -101,7 +101,7 @@ function isEntryValid(entry: TreeEntry, repo: Repository): boolean {
   if (entry.type === "blob" && repo.ignoreFileNames && repo.ignoreFileNames.length > 0) {
     const filename = entry.path.split("/").at(-1);
     if (filename === undefined) {
-      console.log(`Removing entry: ${entry} because of undefined file name`)
+      console.log(`Removing entry with path: ${entry.path} because of undefined file name`)
       return false;
     }
     if (
@@ -110,23 +110,28 @@ function isEntryValid(entry: TreeEntry, repo: Repository): boolean {
       .includes(filename.toLowerCase())
       ) {
 
-        console.log(`Removing entry: ${entry} because of ignored file name`)
+        console.log(`Removing entry with path: ${entry.path} because of ignored file name`)
         return false;
       }
   }
   return true;
 }
 
-// if slug !== null | undefined, it should be used on nodes with node.type==="tree"
 async function getValidRepoTree(
   repo: Repository,
-  slug: string = `${repo.branch ?? "main"}?recursive=1`
 ) {
   if (repo.provider === "github.com" || repo.provider === undefined) {
-    const apiUrl = `https://api.github.com/repos/${repo.username}/${repo.repo}/git/trees/${slug}`;
+    const apiUrl = `https://api.github.com/repos/${repo.username}/${repo.repo}/git/trees/${repo.branch ?? "main"}?recursive=1`;
+    console.log("API_URL: ", apiUrl);
     try {
       const res = await fetch(apiUrl);
+      // , {
+      //   headers: process.env.GITHUB_CLIENT_SECRET ? {
+      //     Authorization: `Bearer ${process.env.GITHUB_CLIENT_SECRET}`
+      //   } : {}
+      // });
       if (!res.ok) {
+        console.log("received status: ", res.status);
         throw new Error("NETWORKING");
       }
 
@@ -134,12 +139,6 @@ async function getValidRepoTree(
 
       // all of the files in the repo
       const decodedTree: TreeEntry[] = (await res.json()).tree;
-      console.log(
-        "Dentro getValidRepo tree con tree: ",
-        decodedTree,
-        " ::: e filtrato === ",
-        decodedTree.filter((entry) => isEntryValid(entry, repo))
-      );
       return decodedTree.filter((entry) => isEntryValid(entry, repo));
       //.filter((entry: TreeEntry) => isEntryValid(entry, repo!)).find(entry => )
     } catch (e) {
@@ -162,7 +161,7 @@ async function getData(
   if (path !== undefined) {
     // find the info about the file/dir
     data = rootTree.find(
-      (entry) => entry.path === `${repo!.baseDirectory ?? ""}${path.join("/")}`
+      (entry) => entry.path === `${repo!.baseDirectory ?? ""}${path.join("/")}` || entry.path === `${repo!.baseDirectory ?? ""}${path.join("/")}.md`
     );
 
     // if the queried file/dir cannot be found return early
@@ -179,7 +178,7 @@ async function getData(
     try {
       return {
         isDir: false,
-        content: getFileContent(data!.url),
+        content: await getFileContent(data!.url),
         path: [repo.alias, ...(path as string[])], // here path is a string[] because the curren target passed the !isDir which means that it is a blob, and a blob cannot be at the root dir, which means there is a path
         //! not sure about the reasoning above.
       };
@@ -189,33 +188,51 @@ async function getData(
   }
   // in this case we are dealing with the root of a repo or another nested directory
 
-  let dirData = rootTree;
-  if (data !== undefined) {
-    // then path !== undefined (otherwise we would have exited early from this function), so we are looking for stuff in a nested dir
-    dirData = await getValidRepoTree(repo, data.sha);
-  }
-  console.log("Dirdata", dirData);
+  let dirData = rootTree.filter(entry => {
+    // filter out files that are not in the queried directory
+    if(entry.path.indexOf(path ? path.join("/") : "") !== 0) return false;
+    console.log(entry.path, path ? path.join("/") : "");
+    return true;
+  }).map(entry => {
+    //const {path, type, url} = entry;
+    const parsedFilename = entry.path.substring((path ? path.join("/") : "").length);
+    return {
+      filename: parsedFilename.startsWith("/") ? parsedFilename.substring(1) : parsedFilename, //remove leading / 
+      isDir: entry.type === "tree",
+      url: entry.url,
+    }
+  }).filter(entry => { 
+    if(entry.filename === "") return false;
+    
+    // filter out files nested inside directories in the queried directories
+    if(entry.filename.split("/").length > 1) return false;
+    
+    return true;
+  });
+    console.log("DirData:::", dirData);
+
+  //TODO return yml parse prelude of the files instead of the content
 
   const content = (
     await Promise.allSettled(
       dirData.map(async (entry) => {
-        if (entry.type === "tree") {
+        if (entry.isDir) {
           return {
             isDir: true,
-            filename: entry.path,
+            filename: entry.filename,
           };
         }
         return {
           isDir: false,
+          filename: entry.filename,
           content: await getFileContent(entry.url),
         };
       })
     )
   ).filter((res) => {
-    console.log(res.status);
     return res.status === "fulfilled";
   }).map(v => (v as PromiseFulfilledResult<any>).value);//TODO remove any and create better types 
-  console.log("returning a root dir somehow", content);
+  console.log("returning a dir data ::: ", content);
 
   return {
     isDir: true,
@@ -230,8 +247,12 @@ async function getData(
 // should only be called on blob urls
 // fetches and returns decoded blob found at url
 async function getFileContent(url: string) {
-  console.log(`Getting data for url: ${url}`);
   const res = await fetch(url);
+  // , {
+  //   headers: process.env.GITHUB_CLIENT_SECRET ? {
+  //     Authorization: `Bearer ${process.env.GITHUB_CLIENT_SECRET}`
+  //   } : {}
+  // });
   const decoded = await res.json();
   return Buffer.from(decoded.content, decoded.encoding).toString();
 }

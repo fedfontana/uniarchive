@@ -1,8 +1,17 @@
-import { GetServerSideProps, NextPage } from "next";
+import { GetServerSideProps, InferGetServerSidePropsType, NextPage } from "next";
 
-interface Props {}
+interface SuccessProps { 
+  error: false,
+  data: DirData | FileData,
+}
+interface FailureProps {
+  error: true,
+  cause: string, //TODO more fine grained type
+}
 
-const PathPage: NextPage = (props: any) => {
+type Props = SuccessProps | FailureProps;
+
+const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (props: Props) => {
   return <div>{JSON.stringify(props)}</div>;
 };
 
@@ -40,6 +49,20 @@ const repos: Repository[] = [
   },
 ];
 
+
+interface BaseDirData {
+  filename: string,
+  isDir: true,
+}
+interface BaseFileData {
+  filename: string,
+  isDir: false,
+  content: string,
+}
+
+type DataEntry = BaseDirData | BaseFileData;
+
+
 export const getServerSideProps: GetServerSideProps = async ({
   req,
   res,
@@ -67,7 +90,7 @@ export const getServerSideProps: GetServerSideProps = async ({
     return {
       props: {
         error: false,
-        ...data,
+        data,
       },
     };
   } catch (e) {
@@ -149,6 +172,7 @@ async function getValidRepoTree(
   }
 }
 
+
 async function getData(
   rootTree: TreeEntry[],
   repo: Repository,
@@ -176,12 +200,13 @@ async function getData(
   if (!isDir) {
     // return the file content
     try {
-      return {
+      const fileData: FileData = {
         isDir: false,
         content: await getFileContent(data!.url),
-        path: [repo.alias, ...(path as string[])], // here path is a string[] because the curren target passed the !isDir which means that it is a blob, and a blob cannot be at the root dir, which means there is a path
+        path: [repo.alias ?? repo.repo, ...(path as string[])], // here path is a string[] because the curren target passed the !isDir which means that it is a blob, and a blob cannot be at the root dir, which means there is a path
         //! not sure about the reasoning above.
       };
+      return fileData;
     } catch (e) {
       throw new Error((e as Error).message);
     }
@@ -209,7 +234,7 @@ async function getData(
     
     return true;
   });
-    console.log("DirData:::", dirData);
+    console.log("BaseDirData:::", dirData);
 
   //TODO return yml parse prelude of the files instead of the content
 
@@ -217,31 +242,46 @@ async function getData(
     await Promise.allSettled(
       dirData.map(async (entry) => {
         if (entry.isDir) {
-          return {
+          const dirData: BaseDirData = {
             isDir: true,
             filename: entry.filename,
           };
+          return dirData;
         }
-        return {
+        const fileData: BaseFileData = {
           isDir: false,
           filename: entry.filename,
           content: await getFileContent(entry.url),
         };
+        return fileData;
       })
     )
   ).filter((res) => {
     return res.status === "fulfilled";
-  }).map(v => (v as PromiseFulfilledResult<any>).value);//TODO remove any and create better types 
+  }).map(v => (v as PromiseFulfilledResult<DataEntry>).value);//TODO remove any and create better types 
   console.log("returning a dir data ::: ", content);
 
-  return {
+  const dir: DirData = {
     isDir: true,
     path:
       path === undefined
         ? [repo.alias ?? repo.repo]
         : [repo.alias ?? repo.repo, ...path],
-    content,
+    files: content,
   };
+  return dir;
+}
+
+interface DirData {
+  isDir: true,
+  files: DataEntry[],
+  path: string[],
+}
+
+interface FileData {
+  isDir: false,
+  path: string[],
+  content: string,
 }
 
 // should only be called on blob urls

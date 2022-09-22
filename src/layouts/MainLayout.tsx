@@ -21,7 +21,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
 function Navbar() {
   return (
     <nav className="bg-neutral-300 py-6 w-full px-32 flex flex-row justify-between items-baseline">
-      <h1 className="text-3xl">
+      <h1 className="text-3xl hover:underline">
         <Link href="/">uniarchive</Link>
       </h1>
       <button className="text-xl underline cursor-pointer">use dark theme</button>

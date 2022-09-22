@@ -3,7 +3,7 @@ export interface Repository {
     username: string;
     repo: string;
     alias?: string;
-    courseName?: string;
+    courseName: string;
     branch?: string;
     ignoreFileNames?: string[];
     baseDirectory?: string;

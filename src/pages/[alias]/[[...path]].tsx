@@ -15,7 +15,7 @@ import frontMatter from "front-matter";
 import Markdown from "$components/Markdown";
 import TopicPill from "$src/components/TopicPill";
 import { Router, useRouter } from "next/router";
-import { useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 
 interface SuccessProps {
   error: false;
@@ -28,10 +28,21 @@ interface FailureProps {
 
 type Props = SuccessProps | FailureProps;
 
+const useFocus = () => {
+  const htmlElRef = useRef<any>(null);
+  const setFocus = () => {
+    htmlElRef.current?.focus();
+  };
+
+  return [htmlElRef, setFocus];
+};
+
 const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
   props: Props
 ) => {
   const router = useRouter();
+  const [inputRef, setInputFocus] = useFocus();
+
   const [query, setQuery] = useState(
     router.query.query !== undefined
       ? router.query.query instanceof Array
@@ -39,6 +50,15 @@ const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
         : router.query.query
       : ""
   );
+
+  useEffect(() => {
+    document.addEventListener("keydown", function (e) {
+      if (e.ctrlKey && e.key === "k") {
+        e.preventDefault();
+        (setInputFocus as any)();
+      }
+    });
+  }, [inputRef, setInputFocus]);
 
   if (props.error) {
     return <div>an error occurred. Cause: {props.cause}</div>;
@@ -49,7 +69,6 @@ const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
   // - last updated
   // - held on
 
-  //TODO fare in modo che quando si schiaccia su nome prof, topic ecc si cerca quella roba automaticamente (in cartella corrente)
   //TODO ctrl+k focuses search box
   //TODO add debounce to search
 
@@ -58,19 +77,39 @@ const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
   if (data.isDir) {
     const files = data.files.filter((entry) => {
       const q = query!.toLowerCase().trim();
-      const filename = !entry.isDir ? entry.filename.toLowerCase().slice(0, entry.filename.length-3) : entry.filename.toLowerCase(); // remove .md extension
+      const filename = !entry.isDir
+        ? entry.filename.toLowerCase().slice(0, entry.filename.length - 3)
+        : entry.filename.toLowerCase(); // remove .md extension
       if (q.startsWith("topic:")) {
         if (entry.isDir) return false;
-        if(!entry.frontmatter.lecture?.topics || entry.frontmatter.lecture?.topics.length < 1) return false;
-        return entry.frontmatter.lecture.topics.find(topic => topic.toLowerCase().trim().includes(q.slice(6))) !== undefined
+        if (
+          !entry.frontmatter.lecture?.topics ||
+          entry.frontmatter.lecture?.topics.length < 1
+        )
+          return false;
+        return (
+          entry.frontmatter.lecture.topics.find((topic) =>
+            topic.toLowerCase().trim().includes(q.slice(6))
+          ) !== undefined
+        );
       } else if (q.startsWith("title:")) {
         if (entry.isDir) return false;
-        if(!entry.frontmatter.lecture?.title) return false;
-        return entry.frontmatter.lecture.title.toLowerCase().trim().includes(q.slice(6)) !== undefined
+        if (!entry.frontmatter.lecture?.title) return false;
+        return (
+          entry.frontmatter.lecture.title
+            .toLowerCase()
+            .trim()
+            .includes(q.slice(6)) !== undefined
+        );
       } else if (q.startsWith("prof:")) {
         if (entry.isDir) return false;
-        if(!entry.frontmatter.lecture?.professor) return false;
-        return entry.frontmatter.lecture.professor.toLowerCase().trim().includes(q.slice(5)) !== undefined
+        if (!entry.frontmatter.lecture?.professor) return false;
+        return (
+          entry.frontmatter.lecture.professor
+            .toLowerCase()
+            .trim()
+            .includes(q.slice(5)) !== undefined
+        );
       } else if (q.startsWith("dir:")) {
         if (!entry.isDir) return false;
         return filename.includes(q.slice(4));
@@ -78,47 +117,71 @@ const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
         if (entry.isDir) return false;
         return filename.includes(q.slice(5));
       } else {
-        if(entry.isDir) {
+        if (entry.isDir) {
           return filename.includes(q);
         }
         const { frontmatter } = entry;
-        if(frontmatter.lecture?.topics && frontmatter.lecture?.topics.length > 0) {
-          if(frontmatter.lecture.topics.find(topic => topic.toLowerCase().trim().includes(q)) !== undefined) {
-            return true;
-          }
-        } 
-        if(frontmatter.lecture?.title) {
-          if(frontmatter.lecture.title.toLowerCase().trim().includes(q) !== undefined) {
+        if (
+          frontmatter.lecture?.topics &&
+          frontmatter.lecture?.topics.length > 0
+        ) {
+          if (
+            frontmatter.lecture.topics.find((topic) =>
+              topic.toLowerCase().trim().includes(q)
+            ) !== undefined
+          ) {
             return true;
           }
         }
-        if(frontmatter.lecture?.professor) {
-          if(frontmatter.lecture.professor.toLowerCase().trim().includes(q) !== undefined) {
+        if (frontmatter.lecture?.title) {
+          if (
+            frontmatter.lecture.title.toLowerCase().trim().includes(q) !==
+            undefined
+          ) {
             return true;
           }
-        } 
+        }
+        if (frontmatter.lecture?.professor) {
+          if (
+            frontmatter.lecture.professor.toLowerCase().trim().includes(q) !==
+            undefined
+          ) {
+            return true;
+          }
+        }
         return filename.includes(q);
       }
     });
 
+    //TODO add tooltips to buttons
+    //TODO add keyboard shortcut hint in input elem
     return (
       <div>
         <div className="my-6">
           <Breadcrumbs path={data.path} />
         </div>
-        <div className="flex flex-row gap-2 mb-6">
-          <input
-            type="text"
-            placeholder="Search box farlocca"
-            className="bg-neutral-300 px-6 py-2 rounded-lg w-[50rem]"
-            value={query}
-            onChange={(e) => {
-              console.log(`"${e.target.value}"`);
-              setQuery(e.target.value);
-            }}
-          />
-          <button className="h-12 w-12 bg-neutral-200 rounded-lg">S</button>
+        <div className="flex flex-col md:flex-row gap-4 md:gap-24 mb-6">
+          <div className="flex flex-row gap-2 flex-grow">
+            <input
+              ref={inputRef}
+              autoFocus
+              type="text"
+              placeholder="Search notes..."
+              className="bg-neutral-200 px-6 py-2 rounded-lg flex-shrink flex-grow min-w-[10rem] w-[80%]"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+              }}
+            />
+            <button className="h-12 min-w-12 w-12 bg-neutral-200 rounded-lg">S</button>
+          </div>
+          <div className="flex flex-row gap-2">
+            <button className="h-12 w-12 bg-neutral-200 rounded-lg">C</button>
+            <button className="h-12 w-12 bg-neutral-200 rounded-lg">D</button>
+            <button className="h-12 w-12 bg-neutral-200 rounded-lg">E</button>
+          </div>
         </div>
+
         <div className="flex flex-col gap-4">
           {files.map((entry, idx) => {
             if (entry.isDir) {
@@ -131,7 +194,12 @@ const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
               );
             }
             return (
-              <FileEntry key={`file-${idx}`} data={entry} path={data.path} setQuery={setQuery} />
+              <FileEntry
+                key={`file-${idx}`}
+                data={entry}
+                path={data.path}
+                setQuery={setQuery}
+              />
             );
           })}
         </div>
@@ -244,10 +312,20 @@ function DirectoryEntry({ data, path }: { data: BaseDirData; path: string[] }) {
   );
 }
 
+//TODO refactor components
+//TODO add help button that shows keyboard shortcuts and search filters onClick
 //TODO pass repository to page and show "show on github/gitlab" button with matching icon
 //TODO show course name
 
-function FileEntry({ data, path, setQuery }: { data: BaseFileData; path: string[]; setQuery: (query: string) => void }) {
+function FileEntry({
+  data,
+  path,
+  setQuery,
+}: {
+  data: BaseFileData;
+  path: string[];
+  setQuery: (query: string) => void;
+}) {
   const router = useRouter();
   return (
     <div className="flex flex-col justify-between mx-auto bg-neutral-200 py-3 px-4 rounded-lg w-full gap-3">
@@ -281,16 +359,28 @@ function FileEntry({ data, path, setQuery }: { data: BaseFileData; path: string[
             Unnamed lecture
           </h2>
         )}
+        {(data.frontmatter.lecture?.date ||
+          data.frontmatter.lecture?.professor) && (
+          <h3 className="text-lg font-sourcecodepro text-neutral-600">held</h3>
+        )}
 
         {/* LECTURE DATE AND PROFESSOR */}
-        {(data?.frontmatter.lecture?.date ||
-          data?.frontmatter.lecture?.professor) && (
+        {data.frontmatter.lecture?.date && (
           <h3 className="text-lg font-sourcecodepro text-neutral-600">
-            held
-            {data?.frontmatter.lecture?.date &&
-              ` on ${data?.frontmatter.lecture.date}`}
-            {data?.frontmatter.lecture?.professor &&
-              ` by ${data?.frontmatter.lecture.professor}`}
+            on {data.frontmatter.lecture.date}
+          </h3>
+        )}
+        {data.frontmatter.lecture?.professor && (
+          <h3 className="text-lg font-sourcecodepro text-neutral-600">
+            by{" "}
+            <button
+              onClick={() => {
+                setQuery(`prof:${data.frontmatter.lecture?.professor}`);
+              }}
+              className="hover:underline"
+            >
+              {data.frontmatter.lecture.professor}
+            </button>
           </h3>
         )}
       </span>
@@ -305,9 +395,13 @@ function FileEntry({ data, path, setQuery }: { data: BaseFileData; path: string[
             </h4>
             <div className="flex flex-row gap-2">
               {data?.frontmatter.lecture.topics.map((topic, idx) => (
-                <TopicPill key={`topic-${idx}`} topic={topic} onClick={(topic) => {
-                  setQuery(`topic:${topic}`);
-                }}/>
+                <TopicPill
+                  key={`topic-${idx}`}
+                  topic={topic}
+                  onClick={(topic) => {
+                    setQuery(`topic:${topic}`);
+                  }}
+                />
               ))}
             </div>
           </div>

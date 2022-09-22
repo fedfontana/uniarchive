@@ -46,42 +46,28 @@ const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
     );
   }
 
+  const frontMatterNotEmpty =
+    data.content.frontmatter.lastUpdated !== undefined ||
+    data.content.frontmatter.lecture?.date !== undefined ||
+    data.content.frontmatter.lecture?.title !== undefined ||
+    data.content.frontmatter.lecture?.professor !== undefined ||
+    (data.content.frontmatter.lecture?.topics !== undefined &&
+      data.content.frontmatter.lecture?.topics.length > 0);
+
   return (
     <div>
-      <div className="bg-red-300 flex flex-row gap-2">
-        Navigation:
-        <ul className="flex flex-row gap-2">
-          {data.path.map((segment, idx) => {
-            const urlSlug = data.path.slice(0, idx + 1).join("/");
-            if (idx < data.path.length - 1) {
-              return (
-                <li key={`breadcrumb-${idx}`}>
-                  <a
-                    className="text-blue-700 hover:underline"
-                    href={`/${urlSlug}`}
-                  >
-                    {segment}
-                  </a>
-                  {" > "}
-                </li>
-              );
-            }
-            return <li key={`breadcrumb-${idx}`}>{segment}</li>;
-          })}
-        </ul>
+      <div className="mb-4">
+        <Breadcrumbs path={data.path} />
       </div>
-      {(data.content.frontmatter.lastUpdated !== undefined ||
-        data.content.frontmatter.lecture?.date !== undefined ||
-        data.content.frontmatter.lecture?.title !== undefined ||
-        data.content.frontmatter.lecture?.professor !== undefined ||
-        (data.content.frontmatter.lecture?.topics !== undefined &&
-          data.content.frontmatter.lecture?.topics.length > 0)) && (
+      {frontMatterNotEmpty && (
         <FrontmatterSection frontmatter={data.content.frontmatter} />
       )}
 
+      <div className="h-8"></div>
+
       <article
         className="pb-10 md:pb-20 mt-20 md:mt-0 max-w-none
-          w-10/12 md:w-5/12 mx-auto
+          w-10/12 mx-auto
           font-sourcecodepro
           prose prose-md md:prose-xl prose-neutral dark:prose-invert 
           prose-a:text-blue-500 prose-a:no-underline hover:prose-a:underline
@@ -110,13 +96,40 @@ const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
 
 export default PathPage;
 
+function Breadcrumbs({ path }: { path: string[] }) {
+  return (
+    <div className="bg-neutral-200 flex flex-row gap-2 px-3 py-2 rounded-lg text-lg">
+      Navigation:
+      <ul className="flex flex-row gap-2">
+        {path.map((segment, idx) => {
+          const urlSlug = path.slice(0, idx + 1).join("/");
+          if (idx < path.length - 1) {
+            return (
+              <li key={`breadcrumb-${idx}`}>
+                <a
+                  className="text-blue-700 hover:underline"
+                  href={`/${urlSlug}`}
+                >
+                  {segment}
+                </a>
+                {" > "}
+              </li>
+            );
+          }
+          return <li key={`breadcrumb-${idx}`}>{segment}</li>;
+        })}
+      </ul>
+    </div>
+  );
+}
+
 function FrontmatterSection({
   frontmatter,
 }: {
   frontmatter: FrontmatterOptions;
 }) {
   return (
-    <span className="flex flex-row items-baseline justify-between w-8/12 mx-auto bg-neutral-300 py-4">
+    <span className="flex flex-row items-baseline justify-between mx-auto bg-neutral-200 py-3 px-4 rounded-lg">
       {/* LEFT SECTION */}
       <div className="flex flex-col gap-2">
         {/* TOP LECTURE SECTION */}

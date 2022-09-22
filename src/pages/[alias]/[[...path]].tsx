@@ -13,6 +13,7 @@ import {
 import { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import frontMatter from "front-matter";
 import Markdown from "$components/Markdown";
+import TopicPill from "$src/components/TopicPill";
 
 interface SuccessProps {
   error: false;
@@ -47,39 +48,6 @@ const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
 
   return (
     <div>
-      <div className="bg-red-700">
-        <h2>Markdown file stuff:</h2>
-        {data.content.frontmatter.lastUpdated && (
-          <p>Last updated on {data.content.frontmatter.lastUpdated}</p>
-        )}
-        {data.content.frontmatter.lecture?.date && (
-          <p>Lecture held on {data.content.frontmatter.lecture.date}</p>
-        )}
-        {data.content.frontmatter.lecture?.title && (
-          <p>Lecture title: {data.content.frontmatter.lecture.title}</p>
-        )}
-        {data.content.frontmatter.lecture?.professor && (
-          <p>Lecture by: {data.content.frontmatter.lecture.professor}</p>
-        )}
-        {data.content.frontmatter.lecture?.topics &&
-          data.content.frontmatter.lecture?.topics.length > 0 && (
-            <div className="flex flex-row gap-4 items-center">
-              <h3>Lecture topics:</h3>
-              <div className="flex flex-row gap-2">
-                {data.content.frontmatter.lecture.topics.map((topic, idx) => {
-                  return (
-                    <div
-                      key={`topic-${idx}`}
-                      className="bg-red-200 px-[0.4rem] py-[0.2rem] rounded-lg"
-                    >
-                      {topic}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-      </div>
       <div className="bg-red-300 flex flex-row gap-2">
         Navigation:
         <ul className="flex flex-row gap-2">
@@ -102,6 +70,15 @@ const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
           })}
         </ul>
       </div>
+      {(data.content.frontmatter.lastUpdated !== undefined ||
+        data.content.frontmatter.lecture?.date !== undefined ||
+        data.content.frontmatter.lecture?.title !== undefined ||
+        data.content.frontmatter.lecture?.professor !== undefined ||
+        (data.content.frontmatter.lecture?.topics !== undefined &&
+          data.content.frontmatter.lecture?.topics.length > 0)) && (
+        <FrontmatterSection frontmatter={data.content.frontmatter} />
+      )}
+
       <article
         className="pb-10 md:pb-20 mt-20 md:mt-0 max-w-none
           w-10/12 md:w-5/12 mx-auto
@@ -132,6 +109,65 @@ const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
 };
 
 export default PathPage;
+
+function FrontmatterSection({
+  frontmatter,
+}: {
+  frontmatter: FrontmatterOptions;
+}) {
+  return (
+    <span className="flex flex-row items-baseline justify-between w-8/12 mx-auto bg-neutral-300 py-4">
+      {/* LEFT SECTION */}
+      <div className="flex flex-col gap-2">
+        {/* TOP LECTURE SECTION */}
+        <span className="flex flex-row items-baseline gap-2">
+          {frontmatter.lecture?.title ? (
+            <span className="flex flex-row gap-2 items-baseline">
+              <h2 className="text-lg font-sourcecodepro text-neutral-600">
+                Lecture{" "}
+              </h2>
+              <h2 className="text-2xl font-sourcecodepro font-semibold">
+                {frontmatter.lecture.title}
+              </h2>
+            </span>
+          ) : (
+            <h2 className="text-2xl font-sourcecodepro font-semibold">
+              Unnamed lecture
+            </h2>
+          )}
+          {(frontmatter.lecture?.date || frontmatter.lecture?.professor) && (
+            <h3 className="text-lg font-sourcecodepro text-neutral-600">
+              held
+              {frontmatter.lecture?.date && ` on ${frontmatter.lecture.date}`}
+              {frontmatter.lecture?.professor &&
+                ` by ${frontmatter.lecture.professor}`}
+            </h3>
+          )}
+        </span>
+
+        {/* BOTTOM LECTURE SECTION (TOPICS) */}
+        {frontmatter.lecture?.topics && frontmatter.lecture?.topics.length > 0 && (
+          <div className="flex flex-row gap-4 items-center">
+            <h4 className="text-lg font-sourcecodepro text-neutral-600">
+              Topics:
+            </h4>
+            <div className="flex flex-row gap-2">
+              {frontmatter.lecture.topics.map((topic, idx) => (
+                <TopicPill key={`topic-${idx}`} topic={topic} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+      {/* RIGHT SECTION */}
+      {frontmatter.lastUpdated && (
+        <h3 className="text-lg font-sourcecodepro text-neutral-900 font-semibold">
+          Notes last updated on {frontmatter.lastUpdated}
+        </h3>
+      )}
+    </span>
+  );
+}
 
 const repos: Repository[] = [
   {
@@ -277,17 +313,13 @@ async function getData(
 
   if (!isDir) {
     // return the file content
-    try {
-      const fileData: FileData = {
-        isDir: false,
-        content: await getFileContent(data!.url),
-        path: [repo.alias ?? repo.repo, ...(path as string[])], // here path is a string[] because the curren target passed the !isDir which means that it is a blob, and a blob cannot be at the root dir, which means there is a path
-        //! not sure about the reasoning above.
-      };
-      return fileData;
-    } catch (e) {
-      throw new Error((e as Error).message);
-    }
+    const fileData: FileData = {
+      isDir: false,
+      content: await getFileContent(data!.url),
+      path: [repo.alias ?? repo.repo, ...(path as string[])], // here path is a string[] because the curren target passed the !isDir which means that it is a blob, and a blob cannot be at the root dir, which means there is a path
+      //! not sure about the reasoning above.
+    };
+    return fileData;
   }
   // in this case we are dealing with the root of a repo or another nested directory
 
@@ -319,8 +351,6 @@ async function getData(
       return true;
     });
 
-  //TODO return yml parse prelude of the files instead of the content
-
   const content = (
     await Promise.allSettled(
       dirData.map(async (entry) => {
@@ -344,7 +374,7 @@ async function getData(
     .filter((res) => {
       return res.status === "fulfilled";
     })
-    .map((v) => (v as PromiseFulfilledResult<DataEntry>).value); //TODO remove any and create better types
+    .map((v) => (v as PromiseFulfilledResult<DataEntry>).value);
 
   const dir: DirData = {
     isDir: true,

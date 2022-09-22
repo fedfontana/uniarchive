@@ -44,9 +44,12 @@ export default function Markdown({ content, ...rest }: Props) {
           return !inline && match ? (
             <SyntaxHighlighter
               children={String(children).replace(/\n$/, "")}
-              style={theme}
+              style={theme as any}
               language={match[1]}
               PreTag="pre"
+              showLineNumbers
+              showInlineLineNumbers
+              wrapLongLines
               {...props}
             />
           ) : (

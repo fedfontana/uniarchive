@@ -74,6 +74,7 @@ const Home: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
   );
 };
 //TODO setup constants like DEFAULT_REPO_BRANCH and use those instead of random strings around the project
+//TODO use regex string array in config to describe ignored files' relative path
 
 export default Home;
 

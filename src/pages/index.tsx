@@ -107,13 +107,11 @@ function filterRepos(repo: Repository, query: string) {
   }
 }
 
+import repos from '$src/config';
 export async function getStaticProps() {
-  const jsonDirectory = process.cwd();
   return {
     props: {
-      repos: JSON.parse(
-        await fs.readFile(jsonDirectory + "/config.json", "utf8")
-      ).repos as Repository[],
+      repos: repos,
     },
   };
 }

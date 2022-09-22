@@ -300,16 +300,13 @@ function CourseHeading({ repo, path }: { repo: Repository; path: string[] }) {
 //TODO handle this page's errors
 //TODO stretch: add route to download all notes as zip of md/pdf files
 //TODO fix images not working  
-
+import repos from '$src/config';
 export const getServerSideProps: GetServerSideProps = async ({ query }) => {
   const alias = query.alias as string;
   const path = query.path as string[] | undefined;
 
   // if path === undefined, then full repo request
   // if path instanceof Array, then there is a path
-  const repos = JSON.parse(
-    await fs.readFile(process.cwd() + "/config.json", "utf8")
-  ).repos as Repository[];
 
   let repo = repos.find((repo) => repo.alias === alias || repo.repo === alias);
   if (repo === undefined) {

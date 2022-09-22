@@ -301,12 +301,14 @@ function CourseHeading({ repo, path }: { repo: Repository; path: string[] }) {
 //TODO stretch: add route to download all notes as zip of md/pdf files
 //TODO fix images not working  
 import repos from '$src/config';
-export const getServerSideProps: GetServerSideProps = async ({ query }) => {
+export const getServerSideProps: GetServerSideProps = async ({ res, query }) => {
   const alias = query.alias as string;
   const path = query.path as string[] | undefined;
 
   // if path === undefined, then full repo request
   // if path instanceof Array, then there is a path
+  
+  res.setHeader("Cache-Control", "public, s-maxage=1000");
 
   let repo = repos.find((repo) => repo.alias === alias || repo.repo === alias);
   if (repo === undefined) {

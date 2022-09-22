@@ -3,7 +3,7 @@ import { ReactNode } from "react";
 
 export default function MainLayout({ children }: { children: ReactNode }) {
   return (
-    <body
+    <div
       className="w-full min-h-full 
             bg-white text-neutral-900 
             dark:bg-neutral-900 dark:text-white 
@@ -14,7 +14,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
         <Navbar />
       </div>
       <main className="relative w-8/12 mx-auto">{children}</main>
-    </body>
+    </div>
   );
 }
 

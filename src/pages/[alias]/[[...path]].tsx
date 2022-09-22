@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-page-custom-font */
 import {
   DirData,
   FileData,
@@ -27,14 +28,105 @@ type Props = SuccessProps | FailureProps;
 const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
   props: Props
 ) => {
+  if (props.error) {
+    return <div>an error occurred. Cause: {props.cause}</div>;
+  }
+
+  const { data } = props;
+
+  if (data.isDir) {
+    return (
+      <div>
+        <h2>Files:</h2>
+        <pre>
+          <code>{JSON.stringify(data.files, undefined, 2)}</code>
+        </pre>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <pre>
-        <code>{JSON.stringify(props, undefined, 2)}</code>
-      </pre>
-      {props.error === false && props.data.isDir === false && (
-        <Markdown content={props.data.content.body} />
-      )}
+      <div className="bg-red-700">
+        <h2>Markdown file stuff:</h2>
+        {data.content.frontmatter.lastUpdated && (
+          <p>Last updated on {data.content.frontmatter.lastUpdated}</p>
+        )}
+        {data.content.frontmatter.lecture?.date && (
+          <p>Lecture held on {data.content.frontmatter.lecture.date}</p>
+        )}
+        {data.content.frontmatter.lecture?.title && (
+          <p>Lecture title: {data.content.frontmatter.lecture.title}</p>
+        )}
+        {data.content.frontmatter.lecture?.professor && (
+          <p>Lecture by: {data.content.frontmatter.lecture.professor}</p>
+        )}
+        {data.content.frontmatter.lecture?.topics &&
+          data.content.frontmatter.lecture?.topics.length > 0 && (
+            <div className="flex flex-row gap-4 items-center">
+              <h3>Lecture topics:</h3>
+              <div className="flex flex-row gap-2">
+                {data.content.frontmatter.lecture.topics.map((topic, idx) => {
+                  return (
+                    <div
+                      key={`topic-${idx}`}
+                      className="bg-red-200 px-[0.4rem] py-[0.2rem] rounded-lg"
+                    >
+                      {topic}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+      </div>
+      <div className="bg-red-300 flex flex-row gap-2">
+        Navigation:
+        <ul className="flex flex-row gap-2">
+          {data.path.map((segment, idx) => {
+            const urlSlug = data.path.slice(0, idx + 1).join("/");
+            if (idx < data.path.length - 1) {
+              return (
+                <li key={`breadcrumb-${idx}`}>
+                  <a
+                    className="text-blue-700 hover:underline"
+                    href={`/${urlSlug}`}
+                  >
+                    {segment}
+                  </a>
+                  {" > "}
+                </li>
+              );
+            }
+            return <li key={`breadcrumb-${idx}`}>{segment}</li>;
+          })}
+        </ul>
+      </div>
+      <article
+        className="pb-10 md:pb-20 mt-20 md:mt-0 max-w-none
+          w-10/12 md:w-5/12 mx-auto
+          font-sourcecodepro
+          prose prose-md md:prose-xl prose-neutral dark:prose-invert 
+          prose-a:text-blue-500 prose-a:no-underline hover:prose-a:underline
+          prose-h1:text-4xl md:prose-h1:text-5xl prose-h1:text-center md:prose-h1:text-left 
+          prose-h2:text-3xl md:prose-h2:text-4xl 
+          prose-h3:text-2xl md:prose-h3:text-3xl
+          prose-h4:text-xl md:prose-h4:text-2xl 
+          prose-h5:text-lg md:prose-h5:text-xl 
+          prose-h6:text-md md:prose-h6:text-lg
+          prose-p:leading-8 
+          prose-li:leading-6 prose-li:marker:text-neutral-500 dark:prose-li:marker:text-neutral-400
+          prose-img:mx-auto
+          prose-table:shadow-md dark:prose-table:shadow-neutral-900 prose-table:border-[.01rem] prose-table:border-neutral-200 dark:prose-table:border-neutral-700
+          prose-th:text-center prose-th:py-6 prose-th:bg-gray-100 prose-th:text-gray-600 dark:prose-th:text-neutral-200 dark:prose-th:bg-neutral-800
+          hover:prose-tr:bg-gray-200 dark:hover:prose-tr:bg-neutral-700
+          prose-td:text-center
+          prose-figure:flex prose-figure:flex-col prose-figure:items-center
+          prose-figcaption:text-inherit prose-figcaption:text-center prose-figcaption:w-[80%]
+          "
+      >
+        <Markdown content={(props.data as FileData).content.body} />
+      </article>
     </div>
   );
 };
@@ -54,9 +146,7 @@ const repos: Repository[] = [
   },
 ];
 
-export const getServerSideProps: GetServerSideProps = async ({
-  query,
-}) => {
+export const getServerSideProps: GetServerSideProps = async ({ query }) => {
   const alias = query.alias as string;
   const path = query.path as string[] | undefined;
 
@@ -241,10 +331,11 @@ async function getData(
           };
           return dirData;
         }
+        const fileContent = await getFileContent(entry.url);
         const fileData: BaseFileData = {
           isDir: false,
           filename: entry.filename,
-          content: await getFileContent(entry.url),
+          frontmatter: fileContent.frontmatter,
         };
         return fileData;
       })

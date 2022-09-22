@@ -9,11 +9,22 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@tailwindcss/typography": "^0.5.7",
     "front-matter": "^4.0.2",
     "next": "12.3.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "react-markdown": "^8.0.3"
+    "react-markdown": "^8.0.3",
+    "react-syntax-highlighter": "^15.5.0",
+    "rehype-autolink-headings": "^6.1.1",
+    "rehype-katex": "^6.0.2",
+    "rehype-slug": "^5.0.1",
+    "remark-emoji": "^3.0.2",
+    "remark-gfm": "^3.0.1",
+    "remark-math": "^5.1.1",
+    "remark-parse": "^10.0.1",
+    "remark-smartypants": "^2.0.0",
+    "remark-supersub": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "18.7.18",

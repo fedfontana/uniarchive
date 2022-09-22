@@ -25,7 +25,7 @@ export interface BaseDirData {
 export interface BaseFileData {
     filename: string,
     isDir: false,
-    content: MarkdownFile,
+    frontmatter: FrontmatterOptions,
 }
 
 export type DataEntry = BaseDirData | BaseFileData;
@@ -49,7 +49,7 @@ export interface FrontmatterOptions {
     lecture?: {
       date?: string,
       topics?: string[],
-      name?: string,
+      title?: string,
       professor?: string
     }
   }

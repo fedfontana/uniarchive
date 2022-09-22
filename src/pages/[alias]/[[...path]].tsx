@@ -1,7 +1,5 @@
 import { DataEntry, DirData, FileData, Repository } from "$src/types";
 
-import { promises as fs } from "fs";
-
 import { useEffect, useState } from "react";
 import { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import { useRouter } from "next/router";
@@ -22,7 +20,7 @@ interface SuccessProps {
 }
 interface FailureProps {
   error: true;
-  cause: string; //TODO more fine grained type
+  cause: string;
 }
 
 type Props = SuccessProps | FailureProps;
@@ -58,13 +56,6 @@ const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
   if (props.error) {
     return <div>an error occurred. Cause: {props.cause}</div>;
   }
-
-  //TODO add sort options next to the search box
-  //TODO - directories first (on by default)
-  //TODO - last updated
-  //TODO - held on date
-
-  //TODO add debounce to searches
 
   const { data, repo } = props;
 
@@ -174,24 +165,6 @@ const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
 
 export default PathPage;
 
-//TODO add help button that shows keyboard shortcuts and search filters onClick (both [[...path]] and index)
-
-//TODO home page with list of tracked repositories
-//TODO add icons to buttons
-//TODO functioning dark them switch
-//TODO mobile
-
-//TODO add gitlab support
-
-//TODO use getStaticPaths and getStaticProps?
-
-//TODO validate config file with pre-build script
-
-//TODO add tooltips to sort buttons
-//TODO add keyboard shortcut hint in input elem
-
-//TODO link in directory view header does not use baseDir (may lead to bugs if baseDir is set)
-
 function filterQueryResults(entry: DataEntry, query: string) {
   const q = query.toLowerCase().trim();
   const filename = !entry.isDir
@@ -296,10 +269,6 @@ function CourseHeading({ repo, path }: { repo: Repository; path: string[] }) {
   );
 }
 
-//TODO book favicon
-//TODO handle this page's errors
-//TODO stretch: add route to download all notes as zip of md/pdf files
-//TODO fix images not working  
 import repos from '$src/config';
 export const getServerSideProps: GetServerSideProps = async ({ res, query }) => {
   const alias = query.alias as string;

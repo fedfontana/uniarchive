@@ -30,7 +30,6 @@ export interface BaseFileData {
 
 export type DataEntry = BaseDirData | BaseFileData;
 
-//TODO find better names
 export interface DirData {
     isDir: true,
     files: DataEntry[],

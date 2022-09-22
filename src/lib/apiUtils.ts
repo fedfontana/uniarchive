@@ -142,12 +142,9 @@ export async function getValidRepoTree(repo: Repository) {
                 throw new Error("NETWORKING");
             }
 
-            //TODO handle res.json().truncated
-
             // all of the files in the repo
             const decodedTree: TreeEntry[] = (await res.json()).tree;
             return decodedTree.filter((entry) => isEntryValid(entry, repo));
-            //.filter((entry: TreeEntry) => isEntryValid(entry, repo!)).find(entry => )
         } catch (e) {
             throw new Error((e as Error).message);
         }

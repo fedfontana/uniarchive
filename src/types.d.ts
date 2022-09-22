@@ -58,3 +58,7 @@ export interface MarkdownFile {
     frontmatter: FrontmatterOptions;
     body: string;
 }
+
+export interface Config {
+    repos: Repository[];
+}

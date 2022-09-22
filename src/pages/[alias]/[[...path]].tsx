@@ -1,5 +1,7 @@
 import { DataEntry, DirData, FileData, Repository } from "$src/types";
 
+import { promises as fs } from "fs";
+
 import { useEffect, useState } from "react";
 import { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import { useRouter } from "next/router";
@@ -57,12 +59,12 @@ const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
     return <div>an error occurred. Cause: {props.cause}</div>;
   }
 
-  //TODo add sort options next to the search box
-  // - directories first (on by default)
-  // - last updated
-  // - held on date
+  //TODO add sort options next to the search box
+  //TODO - directories first (on by default)
+  //TODO - last updated
+  //TODO - held on date
 
-  //TODO add debounce to search
+  //TODO add debounce to searches
 
   const { data, repo } = props;
 
@@ -131,7 +133,7 @@ const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
 
   return (
     <div>
-      <CourseHeading repo={repo} path={props.data.path}/>
+      <CourseHeading repo={repo} path={props.data.path} />
       <div className="mb-4">
         <Breadcrumbs path={data.path} />
       </div>
@@ -172,22 +174,23 @@ const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
 
 export default PathPage;
 
-//TODO add help button that shows keyboard shortcuts and search filters onClick
-//TODO pass repository to page and show "show on github/gitlab" button with matching icon
-//TODO show course name
+//TODO add help button that shows keyboard shortcuts and search filters onClick (both [[...path]] and index)
 
 //TODO home page with list of tracked repositories
 //TODO add icons to buttons
 //TODO functioning dark them switch
 //TODO mobile
 
-//TODO validation of config file with pre-build script
-//TODO actually use config file
+//TODO add gitlab support
 
-//TODO add tooltips to buttons
+//TODO use getStaticPaths and getStaticProps?
+
+//TODO validate config file with pre-build script
+
+//TODO add tooltips to sort buttons
 //TODO add keyboard shortcut hint in input elem
 
-//TODO link in directory view header does not use baseDir
+//TODO link in directory view header does not use baseDir (may lead to bugs if baseDir is set)
 
 function filterQueryResults(entry: DataEntry, query: string) {
   const q = query.toLowerCase().trim();
@@ -293,18 +296,10 @@ function CourseHeading({ repo, path }: { repo: Repository; path: string[] }) {
   );
 }
 
-const repos: Repository[] = [
-  {
-    provider: "github.com", // optional provider. Defaults to github. Supports github and gitlab.
-    username: "fedfontana",
-    repo: "prova_md", // this will look at github.com/fedfontana/vcc. Make sure that this repo is public!
-    alias: "prova_md", // optional new name for the repository. Must be unique between all of the repos listed.  Defaults to the value of "repo". Useful when two repos from different users have the same name. This gets used in the url.
-    courseName: "Virtualization and Cloud Computing", // optional long name of the course
-    branch: "master", // optional branch name. Defaults to main
-    ignoreFileNames: ["README.md"], // optional list of ignored file names (case insensitive). Defaults to ["README.md"]. If you want to include readmes, just pass [] as option
-    baseDirectory: "",
-  },
-];
+//TODO book favicon
+//TODO handle this page's errors
+//TODO stretch: add route to download all notes as zip of md/pdf files
+//TODO fix images not working  
 
 export const getServerSideProps: GetServerSideProps = async ({ query }) => {
   const alias = query.alias as string;
@@ -312,6 +307,9 @@ export const getServerSideProps: GetServerSideProps = async ({ query }) => {
 
   // if path === undefined, then full repo request
   // if path instanceof Array, then there is a path
+  const repos = JSON.parse(
+    await fs.readFile(process.cwd() + "/config.json", "utf8")
+  ).repos as Repository[];
 
   let repo = repos.find((repo) => repo.alias === alias || repo.repo === alias);
   if (repo === undefined) {

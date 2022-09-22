@@ -37,7 +37,6 @@ export interface DirData {
     path: string[],
 }
 
-//TODO unify with BaseFileData
 export interface FileData {
     isDir: false,
     path: string[],

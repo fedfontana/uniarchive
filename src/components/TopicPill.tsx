@@ -27,20 +27,29 @@ const hashCode = (s: string) =>
   }, 0);
 
 interface Props {
-    topic: string
+  topic: string;
+  onClick?: (topic: string) => void;
 }
 
-function TopicPill({
-  topic,
-}: Props) {
-    const hash = hashCode(topic)
-  return (
-    <div
-      className={`${colors[hash % colors.length]} px-[0.7rem] py-[0.2rem] rounded-full`}
-    >
-      {topic}
-    </div>
-  );
+function TopicPill(props: Props) {
+  const { topic } = props;
+  const hash = hashCode(topic);
+  const classes = `${
+    colors[hash % colors.length]
+  } px-[0.7rem] py-[0.2rem] rounded-full`;
+  if (props.onClick !== undefined) {
+    return (
+      <button
+        className={`${classes} hover:underline`}
+        onClick={() => {
+          props.onClick!(topic);
+        }}
+      >
+        {topic}
+      </button>
+    );
+  }
+  return <div className={classes}>{topic}</div>;
 }
 
-export default React.memo(TopicPill)
+export default React.memo(TopicPill);

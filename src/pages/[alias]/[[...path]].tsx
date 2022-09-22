@@ -14,6 +14,8 @@ import { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import frontMatter from "front-matter";
 import Markdown from "$components/Markdown";
 import TopicPill from "$src/components/TopicPill";
+import { Router, useRouter } from "next/router";
+import { useState } from "react";
 
 interface SuccessProps {
   error: false;
@@ -29,19 +31,110 @@ type Props = SuccessProps | FailureProps;
 const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
   props: Props
 ) => {
+  const router = useRouter();
+  const [query, setQuery] = useState(
+    router.query.query !== undefined
+      ? router.query.query instanceof Array
+        ? router.query.query[0]
+        : router.query.query
+      : ""
+  );
+
   if (props.error) {
     return <div>an error occurred. Cause: {props.cause}</div>;
   }
 
+  //TODo add sort options next to the search box
+  // - directories first (on by default)
+  // - last updated
+  // - held on
+
+  //TODO fare in modo che quando si schiaccia su nome prof, topic ecc si cerca quella roba automaticamente (in cartella corrente)
+  //TODO ctrl+k focuses search box
+  //TODO add debounce to search
+
   const { data } = props;
 
   if (data.isDir) {
+    const files = data.files.filter((entry) => {
+      const q = query!.toLowerCase().trim();
+      const filename = !entry.isDir ? entry.filename.toLowerCase().slice(0, entry.filename.length-3) : entry.filename.toLowerCase(); // remove .md extension
+      if (q.startsWith("topic:")) {
+        if (entry.isDir) return false;
+        if(!entry.frontmatter.lecture?.topics || entry.frontmatter.lecture?.topics.length < 1) return false;
+        return entry.frontmatter.lecture.topics.find(topic => topic.toLowerCase().trim().includes(q.slice(6))) !== undefined
+      } else if (q.startsWith("title:")) {
+        if (entry.isDir) return false;
+        if(!entry.frontmatter.lecture?.title) return false;
+        return entry.frontmatter.lecture.title.toLowerCase().trim().includes(q.slice(6)) !== undefined
+      } else if (q.startsWith("prof:")) {
+        if (entry.isDir) return false;
+        if(!entry.frontmatter.lecture?.professor) return false;
+        return entry.frontmatter.lecture.professor.toLowerCase().trim().includes(q.slice(5)) !== undefined
+      } else if (q.startsWith("dir:")) {
+        if (!entry.isDir) return false;
+        return filename.includes(q.slice(4));
+      } else if (q.startsWith("file:")) {
+        if (entry.isDir) return false;
+        return filename.includes(q.slice(5));
+      } else {
+        if(entry.isDir) {
+          return filename.includes(q);
+        }
+        const { frontmatter } = entry;
+        if(frontmatter.lecture?.topics && frontmatter.lecture?.topics.length > 0) {
+          if(frontmatter.lecture.topics.find(topic => topic.toLowerCase().trim().includes(q)) !== undefined) {
+            return true;
+          }
+        } 
+        if(frontmatter.lecture?.title) {
+          if(frontmatter.lecture.title.toLowerCase().trim().includes(q) !== undefined) {
+            return true;
+          }
+        }
+        if(frontmatter.lecture?.professor) {
+          if(frontmatter.lecture.professor.toLowerCase().trim().includes(q) !== undefined) {
+            return true;
+          }
+        } 
+        return filename.includes(q);
+      }
+    });
+
     return (
       <div>
-        <h2>Files:</h2>
-        <pre>
-          <code>{JSON.stringify(data.files, undefined, 2)}</code>
-        </pre>
+        <div className="my-6">
+          <Breadcrumbs path={data.path} />
+        </div>
+        <div className="flex flex-row gap-2 mb-6">
+          <input
+            type="text"
+            placeholder="Search box farlocca"
+            className="bg-neutral-300 px-6 py-2 rounded-lg w-[50rem]"
+            value={query}
+            onChange={(e) => {
+              console.log(`"${e.target.value}"`);
+              setQuery(e.target.value);
+            }}
+          />
+          <button className="h-12 w-12 bg-neutral-200 rounded-lg">S</button>
+        </div>
+        <div className="flex flex-col gap-4">
+          {files.map((entry, idx) => {
+            if (entry.isDir) {
+              return (
+                <DirectoryEntry
+                  key={`directory-${idx}`}
+                  data={entry}
+                  path={data.path}
+                />
+              );
+            }
+            return (
+              <FileEntry key={`file-${idx}`} data={entry} path={data.path} setQuery={setQuery} />
+            );
+          })}
+        </div>
       </div>
     );
   }
@@ -122,6 +215,121 @@ function Breadcrumbs({ path }: { path: string[] }) {
     </div>
   );
 }
+
+function DirectoryEntry({ data, path }: { data: BaseDirData; path: string[] }) {
+  const router = useRouter();
+
+  return (
+    <div className="flex flex-col justify-between mx-auto bg-neutral-200 py-3 px-4 rounded-lg w-full gap-3">
+      {/* TOP SECTION -- DIR PATH */}
+      <h3 className="text-sm font-sourcecodepro text-neutral-600">
+        directory path: /{path.join("/")}/{data.filename}
+      </h3>
+      <span className="flex flex-row justify-between">
+        {/* DIR NAME */}
+        <h2 className="text-2xl font-sourcecodepro font-semibold">
+          {data.filename}
+        </h2>
+        {/* SHOW DIR BUTTON */}
+        <button
+          className="self-end bg-blue-400 px-4 py-2 rounded-md"
+          onClick={() => {
+            router.push(`/${path.join("/")}/${data.filename}`);
+          }}
+        >
+          show directory
+        </button>
+      </span>
+    </div>
+  );
+}
+
+//TODO pass repository to page and show "show on github/gitlab" button with matching icon
+//TODO show course name
+
+function FileEntry({ data, path, setQuery }: { data: BaseFileData; path: string[]; setQuery: (query: string) => void }) {
+  const router = useRouter();
+  return (
+    <div className="flex flex-col justify-between mx-auto bg-neutral-200 py-3 px-4 rounded-lg w-full gap-3">
+      {/* TOP SECTION -- FILE INFO */}
+      <span className="flex flex-row justify-between items-baseline">
+        {/* FILE PATH */}
+        <h3 className="text-sm font-sourcecodepro text-neutral-600">
+          file path: /{path.join("/")}/{data.filename}
+        </h3>
+        {/* LAST UPDATED */}
+        {data?.frontmatter.lastUpdated && (
+          <h3 className="text-sm font-sourcecodepro text-neutral-600">
+            notes last updated on {data?.frontmatter.lastUpdated}
+          </h3>
+        )}
+      </span>
+      {/* MIDDLE SECTION -- LECTURE INFO */}
+      <span className="flex flex-row items-baseline gap-2">
+        {/* LECTURE NAME */}
+        {data?.frontmatter.lecture?.title ? (
+          <span className="flex flex-row gap-2 items-baseline">
+            <h2 className="text-lg font-sourcecodepro text-neutral-600">
+              Lecture{" "}
+            </h2>
+            <h2 className="text-2xl font-sourcecodepro font-semibold">
+              {data?.frontmatter.lecture.title}
+            </h2>
+          </span>
+        ) : (
+          <h2 className="text-2xl font-sourcecodepro font-semibold">
+            Unnamed lecture
+          </h2>
+        )}
+
+        {/* LECTURE DATE AND PROFESSOR */}
+        {(data?.frontmatter.lecture?.date ||
+          data?.frontmatter.lecture?.professor) && (
+          <h3 className="text-lg font-sourcecodepro text-neutral-600">
+            held
+            {data?.frontmatter.lecture?.date &&
+              ` on ${data?.frontmatter.lecture.date}`}
+            {data?.frontmatter.lecture?.professor &&
+              ` by ${data?.frontmatter.lecture.professor}`}
+          </h3>
+        )}
+      </span>
+
+      {/* BOTTOM SECTION -- TOPICS */}
+      <span className="flex flex-row align-baseline justify-between">
+        {data?.frontmatter.lecture?.topics &&
+        data?.frontmatter.lecture?.topics.length > 0 ? (
+          <div className="flex flex-row gap-4 items-center">
+            <h4 className="text-lg font-sourcecodepro text-neutral-600">
+              Topics:
+            </h4>
+            <div className="flex flex-row gap-2">
+              {data?.frontmatter.lecture.topics.map((topic, idx) => (
+                <TopicPill key={`topic-${idx}`} topic={topic} onClick={(topic) => {
+                  setQuery(`topic:${topic}`);
+                }}/>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div></div>
+        )}
+        <button
+          className="self-end bg-blue-400 px-4 py-2 rounded-md"
+          onClick={() => {
+            router.push(`/${path.join("/")}/${data.filename}`);
+          }}
+        >
+          show notes
+        </button>
+      </span>
+    </div>
+  );
+}
+//TODO home page with list of tracked repositories
+//TODO add icons to buttons
+//TODO functioning dark them switch
+//TODO mobile
 
 function FrontmatterSection({
   frontmatter,

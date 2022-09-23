@@ -11,7 +11,7 @@ import FileEntry from "$components/FileEntry";
 import FrontmatterSection from "$components/FrontmatterSection";
 
 import useFocus from "$lib/useFocus";
-import { getData, getValidRepoTree } from "$lib/apiUtils";
+import { getData } from "$lib/apiUtils";
 
 interface SuccessProps {
   error: false;
@@ -68,7 +68,7 @@ const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
       <div>
         <CourseHeading repo={repo} path={props.data.path} />
         <div className="my-6">
-          <Breadcrumbs path={data.path} />
+          <Breadcrumbs path={props.data.path} />
         </div>
         <div className="flex flex-col md:flex-row gap-4 md:gap-24 mb-6">
           <input
@@ -126,7 +126,7 @@ const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
     <div>
       <CourseHeading repo={repo} path={props.data.path} />
       <div className="mb-4">
-        <Breadcrumbs path={data.path} />
+      <Breadcrumbs path={props.data.path} />
       </div>
       {frontMatterNotEmpty && (
         <FrontmatterSection frontmatter={data.content.frontmatter} />
@@ -290,8 +290,7 @@ export const getServerSideProps: GetServerSideProps = async ({ res, query }) => 
   }
 
   try {
-    const tree = await getValidRepoTree(repo);
-    let data = await getData(tree, repo, path);
+    let data = await getData(repo, path ?? []);
     return {
       props: {
         error: false,

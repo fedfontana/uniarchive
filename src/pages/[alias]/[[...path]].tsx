@@ -1,7 +1,13 @@
-import { DataEntry, DirData, FileData, Repository } from "$src/types";
+import {
+  DataEntry,
+  DirData,
+  FileData,
+  Repository,
+  TreeEntry,
+} from "$src/types";
 
 import { useEffect, useState } from "react";
-import { GetServerSideProps, InferGetServerSidePropsType } from "next";
+import { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from "next";
 import { useRouter } from "next/router";
 
 import Markdown from "$components/Markdown";
@@ -25,7 +31,7 @@ interface FailureProps {
 
 type Props = SuccessProps | FailureProps;
 
-const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
+const PathPage: InferGetStaticPropsType<typeof getStaticProps> = (
   props: Props
 ) => {
   const router = useRouter();
@@ -126,7 +132,7 @@ const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
     <div>
       <CourseHeading repo={repo} path={props.data.path} />
       <div className="mb-4">
-      <Breadcrumbs path={props.data.path} />
+        <Breadcrumbs path={props.data.path} />
       </div>
       {frontMatterNotEmpty && (
         <FrontmatterSection frontmatter={data.content.frontmatter} />
@@ -157,7 +163,11 @@ const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
           prose-figcaption:text-inherit prose-figcaption:text-center prose-figcaption:w-[80%]
           "
       >
-        <Markdown path={props.data.path} repo={repo} content={(props.data as FileData).content.body} />
+        <Markdown
+          path={props.data.path}
+          repo={repo}
+          content={(props.data as FileData).content.body}
+        />
       </article>
     </div>
   );
@@ -269,19 +279,17 @@ function CourseHeading({ repo, path }: { repo: Repository; path: string[] }) {
   );
 }
 
-import repos from '$src/config';
-export const getServerSideProps: GetServerSideProps = async ({ res, query }) => {
-  const alias = query.alias as string;
-  const path = query.path as string[] | undefined;
-
-  // if path === undefined, then full repo request
-  // if path instanceof Array, then there is a path
-  
-  res.setHeader("Cache-Control", "public, s-maxage=1000");
+import config from "$src/config";
+export const getStaticProps: GetStaticProps = async ({ params }) => {
+  if (!params) throw new Error("wtf");
+  const alias = params.alias as string;
+  const path = params.path as string[] | undefined;
+  const { repos, revalidate } = config;
 
   let repo = repos.find((repo) => repo.alias === alias || repo.repo === alias);
   if (repo === undefined) {
     return {
+      revalidate: revalidate ?? 900,
       props: {
         error: true,
         cause: "REPO NOT FOUND",
@@ -292,6 +300,7 @@ export const getServerSideProps: GetServerSideProps = async ({ res, query }) => 
   try {
     let data = await getData(repo, path ?? []);
     return {
+      revalidate: revalidate ?? 900,
       props: {
         error: false,
         data,
@@ -300,6 +309,7 @@ export const getServerSideProps: GetServerSideProps = async ({ res, query }) => 
     };
   } catch (e) {
     return {
+      revalidate: revalidate ?? 900,
       props: {
         error: true,
         cause: (e as Error).message,
@@ -307,3 +317,89 @@ export const getServerSideProps: GetServerSideProps = async ({ res, query }) => 
     };
   }
 };
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const { repos } = config;
+
+  let paths: { alias: string; path: string[] | undefined }[] = [];
+  for (const repo of repos) {
+    if (repo.provider !== "github.com" && repo.provider !== undefined) {
+      throw new Error("NOT SUPPORTED");
+    }
+
+    const apiUrl = `https://api.github.com/repos/${repo.username}/${
+      repo.repo
+    }/git/trees/${repo.branch ?? "main"}?recursive=1`;
+    const res = await fetch(apiUrl, {
+      headers: process.env.GITHUB_TOKEN
+        ? {
+            Authorization: `Token ${process.env.GITHUB_TOKEN}`,
+          }
+        : {},
+    });
+    if (!res.ok) {
+      throw new Error("NETWORKING");
+    }
+    const decoded: TreeEntry[] = (await res.json()).tree;
+
+    const tree = decoded.filter((entry) => isEntryValid(entry, repo));
+    paths = paths.concat(
+      tree.map((entry) => {
+        let newPath = entry.path;
+        if (
+          repo.baseDirectory !== undefined &&
+          repo.baseDirectory !== "" &&
+          entry.path.startsWith(repo.baseDirectory)
+        ) {
+          newPath = entry.path.slice(repo.baseDirectory.length + 1);
+        }
+        return {
+          alias: repo.alias ?? repo.repo,
+          path: newPath === "" ? undefined : newPath.split("/"),
+        };
+      })
+    );
+  }
+  return {
+    fallback: "blocking",
+    paths: paths.map((path) => {
+      return { params: path };
+    }),
+  };
+};
+
+export function isEntryValid(entry: TreeEntry, repo: Repository): boolean {
+  // filter out non .md files
+  if (entry.type === "blob" && entry.path.split(".").at(-1) !== "md") {
+    return false;
+  }
+
+  // filter out files outside of baseDirectory
+  if (repo.baseDirectory !== undefined) {
+    // if not found indexOf returns -1,
+    // else it returns the index of the first letter
+    if (entry.path.indexOf(repo.baseDirectory) !== 0) {
+      return false;
+    }
+  }
+
+  // filter out ignored files from ignoreFileNames
+  if (
+    entry.type === "blob" &&
+    repo.ignoreFileNames &&
+    repo.ignoreFileNames.length > 0
+  ) {
+    const filename = entry.path.split("/").at(-1);
+    if (filename === undefined) {
+      return false;
+    }
+    if (
+      (repo.ignoreFileNames ?? ["README.md"])
+        .map((file) => file.toLowerCase())
+        .includes(filename.toLowerCase())
+    ) {
+      return false;
+    }
+  }
+  return true;
+}

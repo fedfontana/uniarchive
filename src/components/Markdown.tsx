@@ -20,7 +20,7 @@ import Image from "next/image";
 interface Props {
   content: string;
   repo: Repository;
-  path: string[]
+  path: string[];
   [key: string]: any;
 }
 
@@ -64,16 +64,15 @@ export default function Markdown({ content, repo, path, ...rest }: Props) {
         },
         img({ alt, src }) {
           let newSrc = src!;
-          if(!src?.startsWith("https://") && !src?.startsWith("http://"))
-            newSrc = `https://raw.githubusercontent.com/${repo.username}/${repo.repo}/${repo.branch ?? "main"}/${path.slice(1, -1).join("/")}/${src!}`
-          console.log(newSrc);
+          if (!src?.startsWith("https://") && !src?.startsWith("http://"))
+            newSrc = `https://raw.githubusercontent.com/${repo.username}/${
+              repo.repo
+            }/${repo.branch ?? "main"}/${path.slice(1, -1).join("/")}/${src!}`;
           return (
-            <span className="flex flex-col items-center">
+            <span className="flex flex-col items-center text-neutral-500">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={newSrc} alt={alt} />
-              <span className="">
-                Description: {alt}
-              </span>
+              Description: {alt}
             </span>
           );
         },

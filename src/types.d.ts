@@ -59,5 +59,6 @@ export interface MarkdownFile {
 }
 
 export interface Config {
+    revalidate?: number;
     repos: Repository[];
 }

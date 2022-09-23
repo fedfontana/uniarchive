@@ -14,13 +14,17 @@ import rehypeKatex from "rehype-katex";
 
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import theme from "$src/gruvboxDark";
+import { Repository } from "$src/types";
+import Image from "next/image";
 
 interface Props {
   content: string;
-  [key: string]: string;
+  repo: Repository;
+  path: string[];
+  [key: string]: any;
 }
 
-export default function Markdown({ content, ...rest }: Props) {
+export default function Markdown({ content, repo, path, ...rest }: Props) {
   return (
     <ReactMarkdown
       children={content}
@@ -56,6 +60,20 @@ export default function Markdown({ content, ...rest }: Props) {
             <code className={className} {...props}>
               {children}
             </code>
+          );
+        },
+        img({ alt, src }) {
+          let newSrc = src!;
+          if (!src?.startsWith("https://") && !src?.startsWith("http://"))
+            newSrc = `https://raw.githubusercontent.com/${repo.username}/${
+              repo.repo
+            }/${repo.branch ?? "main"}/${path.slice(1, -1).join("/")}/${src!}`;
+          return (
+            <span className="flex flex-col items-center text-neutral-500">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={newSrc} alt={alt} />
+              Description: {alt}
+            </span>
           );
         },
       }}

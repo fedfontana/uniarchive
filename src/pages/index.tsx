@@ -1,6 +1,7 @@
 import type { InferGetStaticPropsType, NextPage } from "next";
 import { Repository } from "$src/types";
 import { useState } from "react";
+import config from '$src/config';
 
 const Home: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
   repos,
@@ -9,8 +10,10 @@ const Home: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
 
   if (repos.length === 0) {
     return (
-      <div>
-        i think you forgot something, its not important -- foto lista repo MEME
+      <div className="w-full mt-24 flex flex-col gap-8 items-center justify-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/meme.jpg" alt="forgot to add repositories in config in meme format"/>
+        <h2 className="text-2xl text-red-600 font-bold uppercase">no repositories found in config.ts</h2>
       </div>
     );
   }
@@ -104,11 +107,10 @@ function filterRepos(repo: Repository, query: string) {
   }
 }
 
-import repos from '$src/config';
 export async function getStaticProps() {
   return {
     props: {
-      repos: repos,
+      repos: config.repos,
     },
   };
 }

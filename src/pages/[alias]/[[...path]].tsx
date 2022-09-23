@@ -157,7 +157,7 @@ const PathPage: InferGetServerSidePropsType<typeof getServerSideProps> = (
           prose-figcaption:text-inherit prose-figcaption:text-center prose-figcaption:w-[80%]
           "
       >
-        <Markdown content={(props.data as FileData).content.body} />
+        <Markdown path={props.data.path} repo={repo} content={(props.data as FileData).content.body} />
       </article>
     </div>
   );

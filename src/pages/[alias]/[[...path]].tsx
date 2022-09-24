@@ -254,15 +254,11 @@ function CourseHeading({ repo, path }: { repo: Repository; path: string[] }) {
   return (
     <div className="flex flex-col gap-4 my-8 items-start">
       <h1 className="text-4xl font-bold">{repo.courseName}</h1>
-      <span className="flex flex-row items-center gap-3">
+      <span className="flex flex-row items-center gap-1">
         <p className="text-xl font-semibold text-neutral-600 dark:text-neutral-300">
           see this {path.at(-1)?.endsWith(".md") ? "file" : "directory"} on
         </p>
-        <div
-          className={`h-8 w-8 ${
-            repo.provider === "gitlab.com" ? "bg-orange-500" : "bg-black"
-          }`}
-        ></div>
+        <ProviderLogo provider={repo.provider} />
         <a
           className="text-xl font-semibold hover:underline text-blue-500"
           href={`https://${repo.provider ?? "github.com"}/${repo.username}/${
@@ -281,6 +277,7 @@ function CourseHeading({ repo, path }: { repo: Repository; path: string[] }) {
 }
 
 import config from "$src/config";
+import ProviderLogo from "$src/components/ProviderLogo";
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   if (!params) throw new Error("wtf");
   const alias = params.alias as string;

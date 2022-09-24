@@ -3,7 +3,7 @@ import { Html, Head, Main, NextScript } from "next/document";
 
 export default function Document() {
   return (
-    <Html>
+    <Html className="dark">
       <Head>
         <link
           rel="stylesheet"
@@ -22,7 +22,7 @@ export default function Document() {
           rel="stylesheet"
         />
       </Head>
-      <body>
+      <body className="w-full min-h-[100vh]">
         <Main />
         <NextScript />
       </body>

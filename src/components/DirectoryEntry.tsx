@@ -5,9 +5,9 @@ export default function DirectoryEntry({ data, path }: { data: BaseDirData; path
     const router = useRouter();
   
     return (
-      <div className="flex flex-col justify-between mx-auto bg-neutral-200 py-3 px-4 rounded-lg w-full gap-3">
+      <div className="flex flex-col justify-between mx-auto bg-neutral-200 dark:bg-neutral-800 py-3 px-4 rounded-lg w-full gap-3 transition-colors duration-500">
         {/* TOP SECTION -- DIR PATH */}
-        <h3 className="text-sm font-sourcecodepro text-neutral-600">
+        <h3 className="text-sm font-sourcecodepro text-neutral-600 dark:text-neutral-300 transition-colors duration-500">
           directory path: /{path.join("/")}/{data.filename}
         </h3>
         <span className="flex flex-row justify-between">

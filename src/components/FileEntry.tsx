@@ -13,16 +13,16 @@ export default function FileEntry({
   }) {
     const router = useRouter();
     return (
-      <div className="flex flex-col justify-between mx-auto bg-neutral-200 py-3 px-4 rounded-lg w-full gap-3">
+      <div className="flex flex-col justify-between mx-auto bg-neutral-200 dark:bg-neutral-800 py-3 px-4 rounded-lg w-full gap-3 transition-colors duration-500">
         {/* TOP SECTION -- FILE INFO */}
         <span className="flex flex-row justify-between items-baseline">
           {/* FILE PATH */}
-          <h3 className="text-sm font-sourcecodepro text-neutral-600">
+          <h3 className="text-sm font-sourcecodepro text-neutral-600 dark:text-neutral-300 transition-colors duration-500">
             file path: /{path.join("/")}/{data.filename}
           </h3>
           {/* LAST UPDATED */}
           {data?.frontmatter.lastUpdated && (
-            <h3 className="text-sm font-sourcecodepro text-neutral-600">
+            <h3 className="text-sm font-sourcecodepro text-neutral-600 dark:text-neutral-300 transition-colors duration-500">
               last updated on {data?.frontmatter.lastUpdated}
             </h3>
           )}
@@ -32,7 +32,7 @@ export default function FileEntry({
           {/* LECTURE NAME */}
           {data?.frontmatter.lecture?.title ? (
             <span className="flex flex-row gap-2 items-baseline">
-              <h2 className="text-lg font-sourcecodepro text-neutral-600">
+              <h2 className="text-lg font-sourcecodepro text-neutral-600 dark:text-neutral-300 transition-colors duration-500">
                 Lecture{" "}
               </h2>
               <h2 className="text-2xl font-sourcecodepro font-semibold">
@@ -46,17 +46,17 @@ export default function FileEntry({
           )}
           {(data.frontmatter.lecture?.date ||
             data.frontmatter.lecture?.professor) && (
-            <h3 className="text-lg font-sourcecodepro text-neutral-600">held</h3>
+            <h3 className="text-lg font-sourcecodepro text-neutral-600 dark:text-neutral-300 transition-colors duration-500">held</h3>
           )}
   
           {/* LECTURE DATE AND PROFESSOR */}
           {data.frontmatter.lecture?.date && (
-            <h3 className="text-lg font-sourcecodepro text-neutral-600">
+            <h3 className="text-lg font-sourcecodepro text-neutral-600 dark:text-neutral-300 transition-colors duration-500">
               on {data.frontmatter.lecture.date}
             </h3>
           )}
           {data.frontmatter.lecture?.professor && (
-            <h3 className="text-lg font-sourcecodepro text-neutral-600">
+            <h3 className="text-lg font-sourcecodepro text-neutral-600 dark:text-neutral-300 transition-colors duration-500">
               by{" "}
               <button
                 onClick={() => {
@@ -75,7 +75,7 @@ export default function FileEntry({
           {data?.frontmatter.lecture?.topics &&
           data?.frontmatter.lecture?.topics.length > 0 ? (
             <div className="flex flex-row gap-4 items-center">
-              <h4 className="text-lg font-sourcecodepro text-neutral-600">
+              <h4 className="text-lg font-sourcecodepro text-neutral-600 dark:text-neutral-300 transition-colors duration-500">
                 Topics:
               </h4>
               <div className="flex flex-row gap-2">

@@ -24,7 +24,7 @@ const Home: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
       <input
         type="text"
         placeholder="Filter repositories..."
-        className="px-4 py-2 rounded-lg bg-gray-300 max-w-[45rem]"
+        className="px-4 py-2 rounded-lg bg-neutral-300 dark:bg-neutral-700 max-w-[45rem] transition-colors duration-500"
         value={query}
         onChange={(e) => {setQuery(e.target.value)}}
       />
@@ -34,7 +34,7 @@ const Home: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
           return (
             <div
               key={`repo-${idx}`}
-              className="flex flex-row items-center justify-between px-6 py-4 bg-gray-300 rounded-lg"
+              className="flex flex-row items-center justify-between px-6 py-4 bg-neutral-300 dark:bg-neutral-800 rounded-lg transition-colors duration-500"
             >
               {/* LEFT SECTION */}
               <a href={`/${repo.alias ?? repo.repo}`} className="text-blue-500 hover:underline">

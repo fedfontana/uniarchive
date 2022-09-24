@@ -3,7 +3,7 @@ import React from "react";
 
 function Breadcrumbs({ path }: { path: string[] }) {
   return (
-    <div className="bg-neutral-200 flex flex-row gap-2 px-3 py-2 rounded-lg text-lg">
+    <div className="bg-neutral-200 dark:bg-neutral-800 flex flex-row gap-2 px-3 py-2 rounded-lg text-lg transition-colors duration-500">
       &gt;
       <ul className="flex flex-row gap-2">
         {path.map((segment, idx) => {

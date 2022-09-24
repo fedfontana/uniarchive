@@ -82,16 +82,16 @@ const PathPage: InferGetStaticPropsType<typeof getStaticProps> = (
             autoFocus
             type="text"
             placeholder="Search notes..."
-            className="bg-neutral-200 px-6 py-2 rounded-lg flex-grow min-w-[10rem] w-[70%]"
+            className="bg-neutral-200 dark:bg-neutral-700 px-6 py-2 rounded-lg flex-grow min-w-[10rem] w-[70%] transition-colors duration-500"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
             }}
           />
           <div className="flex flex-row gap-2">
-            <button className="h-12 w-12 bg-neutral-200 rounded-lg">C</button>
-            <button className="h-12 w-12 bg-neutral-200 rounded-lg">D</button>
-            <button className="h-12 w-12 bg-neutral-200 rounded-lg">E</button>
+            <button className="h-12 w-12 bg-neutral-200 dark:bg-neutral-800 rounded-lg transition-colors duration-500">C</button>
+            <button className="h-12 w-12 bg-neutral-200 dark:bg-neutral-800 rounded-lg transition-colors duration-500">D</button>
+            <button className="h-12 w-12 bg-neutral-200 dark:bg-neutral-800 rounded-lg transition-colors duration-500">E</button>
           </div>
         </div>
 
@@ -144,6 +144,7 @@ const PathPage: InferGetStaticPropsType<typeof getStaticProps> = (
         className="pb-10 md:pb-20 mt-20 md:mt-0 max-w-none
           w-10/12 mx-auto
           font-sourcecodepro
+          transition-colors duration-500
           prose prose-md md:prose-xl prose-neutral dark:prose-invert 
           prose-a:text-blue-500 prose-a:no-underline hover:prose-a:underline
           prose-h1:text-4xl md:prose-h1:text-5xl prose-h1:text-center md:prose-h1:text-left 
@@ -254,7 +255,7 @@ function CourseHeading({ repo, path }: { repo: Repository; path: string[] }) {
     <div className="flex flex-col gap-4 my-8 items-start">
       <h1 className="text-4xl font-bold">{repo.courseName}</h1>
       <span className="flex flex-row items-center gap-3">
-        <p className="text-xl font-semibold text-neutral-600">
+        <p className="text-xl font-semibold text-neutral-600 dark:text-neutral-300">
           see this {path.at(-1)?.endsWith(".md") ? "file" : "directory"} on
         </p>
         <div

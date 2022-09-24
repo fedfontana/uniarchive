@@ -36,7 +36,7 @@ function TopicPill(props: Props) {
   const hash = hashCode(topic);
   const classes = `${
     colors[hash % colors.length]
-  } px-[0.7rem] py-[0.2rem] rounded-full`;
+  } px-[0.4rem] py-[0.1rem] md:px-[0.7rem] md:py-[0.2rem] rounded-full`;
   if (props.onClick !== undefined) {
     return (
       <button

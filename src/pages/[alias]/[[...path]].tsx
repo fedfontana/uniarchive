@@ -30,17 +30,20 @@ const PathPage: InferGetStaticPropsType<typeof getStaticProps> = (
   const router = useRouter();
   const [inputRef, setInputFocus] = useFocus();
 
+  const rq = router.query;
   // use ?q= or ?query= (with prio to ?query=). If they are an array, use the first value. If none of them are used, use "" as the default query
   const [query, setQuery] = useState(
-    router.query.query !== undefined
-      ? router.query.query instanceof Array
-        ? router.query.query[0]
-        : router.query.query
-      : router.query.q !== undefined
-      ? router.query.q instanceof Array
-        ? router.query.q[0]
-        : router.query.q
-      : ""
+    (rq.query !== undefined
+      ? rq.query instanceof Array
+        ? rq.query[0]
+        : rq.query
+      : rq.q !== undefined
+      ? rq.q instanceof Array
+        ? rq.q.length > 0
+          ? rq.q[0]
+          : ""
+        : rq.q
+      : "") as string
   );
 
   useEffect(() => {
@@ -56,11 +59,11 @@ const PathPage: InferGetStaticPropsType<typeof getStaticProps> = (
 
   if (data.isDir) {
     const files = data.files.filter((entry) =>
-      filterQueryResults(entry, query!)
+      filterQueryResults(entry, query)
     );
 
     return (
-      <div>
+      <div className="pb-24">
         <CourseHeading repo={repo} path={props.data.path} />
         <div className="my-6">
           <Breadcrumbs path={props.data.path} />
@@ -69,8 +72,8 @@ const PathPage: InferGetStaticPropsType<typeof getStaticProps> = (
           ref={inputRef}
           autoFocus
           type="text"
-          placeholder="Search notes..."
-          className="bg-neutral-200 dark:bg-neutral-700 px-6 py-2 rounded-lg flex-grow min-w-[10rem] w-[70%] transition-colors duration-500 md:gap-24 mb-6"
+          placeholder="Filter files in this directory..."
+          className="bg-neutral-200 dark:bg-neutral-700 px-6 py-2 rounded-lg flex-grow min-w-[10rem] w-full md:w-[70%] transition-colors duration-500 md:gap-24 mb-6"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -111,7 +114,7 @@ const PathPage: InferGetStaticPropsType<typeof getStaticProps> = (
       data.content.frontmatter.lecture?.topics.length > 0);
 
   return (
-    <div>
+    <div className="pb-24">
       <CourseHeading repo={repo} path={props.data.path} />
       <div className="mb-4">
         <Breadcrumbs path={props.data.path} />
@@ -120,7 +123,7 @@ const PathPage: InferGetStaticPropsType<typeof getStaticProps> = (
         <FrontmatterSection frontmatter={data.content.frontmatter} />
       )}
 
-      <div className="h-8"></div>
+      <div className="md:h-8"/>
 
       <article
         className="pb-10 md:pb-20 mt-20 md:mt-0 max-w-none
@@ -236,7 +239,7 @@ function CourseHeading({ repo, path }: { repo: Repository; path: string[] }) {
   return (
     <div className="flex flex-col gap-4 my-8 items-start">
       <h1 className="text-4xl font-bold">{repo.courseName}</h1>
-      <span className="flex flex-row items-center gap-1">
+      <span className="hidden md:flex flex-row items-center gap-1">
         <p className="text-xl font-semibold text-neutral-600 dark:text-neutral-300">
           see this {path.at(-1)?.endsWith(".md") ? "file" : "directory"} on
         </p>
@@ -252,6 +255,21 @@ function CourseHeading({ repo, path }: { repo: Repository; path: string[] }) {
           }`}
         >
           {repo.username}/{repo.repo}
+        </a>
+      </span>
+      <span className="md:hidden text-lg flex flex-row gap-3">
+        source code available
+        <a
+          className="font-semibold hover:underline text-blue-500"
+          href={`https://${repo.provider ?? "github.com"}/${repo.username}/${
+            repo.repo
+          }${
+            path.length > 1
+              ? `/tree/${repo.branch ?? "main"}/${path.slice(1).join("/")}`
+              : ""
+          }`}
+        >
+          here
         </a>
       </span>
     </div>

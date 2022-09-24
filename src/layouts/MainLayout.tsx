@@ -14,25 +14,33 @@ export default function MainLayout({ children }: { children: ReactNode }) {
       <div className="mb-5 md:mb-4 bg-green-300">
         <Navbar />
       </div>
-      <main className="relative w-8/12 mx-auto">{children}</main>
+      <main className="relative w-11/12 md:w-8/12 mx-auto">{children}</main>
     </div>
   );
 }
 
 function Navbar() {
   return (
-    <nav className="bg-neutral-400 dark:bg-neutral-800 py-6 w-full px-32 flex flex-row justify-between items-baseline transition-colors duration-500 ">
+    <nav
+      className="bg-neutral-400 dark:bg-neutral-800 
+            py-3 md:py-6 w-full px-6 md:px-32 flex flex-col md:flex-row justify-between items-center gap-4 md:items-baseline transition-colors duration-500 "
+    >
       <h1 className="text-3xl hover:underline">
         <Link href="/">uniarchive</Link>
       </h1>
-      <button className="text-xl underline cursor-pointer" onClick={switchTheme}>switch theme</button>
+      <button
+        className="text-xl underline cursor-pointer"
+        onClick={switchTheme}
+      >
+        switch theme
+      </button>
     </nav>
   );
 }
 
 function switchTheme() {
-  if(!document) return;
-  if(document.querySelector("html")?.classList.contains("dark")) {
+  if (!document) return;
+  if (document.querySelector("html")?.classList.contains("dark")) {
     document.querySelector("html")?.classList.remove("dark");
     return;
   }

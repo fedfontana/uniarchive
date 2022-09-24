@@ -26,7 +26,7 @@ const Home: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
   let filteredRepos = repos.filter((repo) => filterRepos(repo, query));
 
   return (
-    <div className="flex flex-col gap-4 justify-center mt-20 md:mt-32">
+    <div className="flex flex-col gap-6 justify-center mt-20 md:mt-32">
       <input
         type="text"
         placeholder="Filter repositories..."
@@ -42,14 +42,14 @@ const Home: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
           return (
             <div
               key={`repo-${idx}`}
-              className="flex flex-row items-center justify-between px-6 py-4 bg-neutral-300 dark:bg-neutral-800 rounded-lg transition-colors duration-500"
+              className="flex flex-col md:flex-row items-start gap-4 md:gap-0 md:items-center justify-between px-6 py-4 bg-neutral-300 dark:bg-neutral-800 rounded-lg transition-colors duration-500"
             >
               {/* LEFT SECTION */}
               <a
                 href={`/${repo.alias ?? repo.repo}`}
                 className="text-blue-500 hover:underline"
               >
-                <h3 className="text-2xl">{repo.courseName}</h3>
+                <h3 className="text-2xl font-semibold">{repo.courseName}</h3>
               </a>
 
               {/* RIGHT SECTION */}
@@ -65,7 +65,7 @@ const Home: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
                     {repo.username}/{repo.repo}
                   </a>
                 </span>
-                <span className="flex flex-row items-center gap-2">
+                <span className="hidden md:flex flex-row items-center gap-2">
                   on
                   <svg
                     className="fill-violet-500"

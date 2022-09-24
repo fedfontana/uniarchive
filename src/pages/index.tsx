@@ -30,7 +30,7 @@ const Home: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
       <input
         type="text"
         placeholder="Filter repositories..."
-        className="px-4 py-2 rounded-lg bg-neutral-300 dark:bg-neutral-700 max-w-[45rem] transition-colors duration-500"
+        className="px-4 py-2 rounded-lg bg-neutral-200 dark:bg-neutral-700 max-w-[45rem] transition-colors duration-500"
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);

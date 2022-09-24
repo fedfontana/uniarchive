@@ -89,9 +89,9 @@ const PathPage: InferGetStaticPropsType<typeof getStaticProps> = (
             }}
           />
           <div className="flex flex-row gap-2">
-            <button className="h-12 w-12 bg-neutral-200 dark:bg-neutral-800 rounded-lg transition-colors duration-500">C</button>
-            <button className="h-12 w-12 bg-neutral-200 dark:bg-neutral-800 rounded-lg transition-colors duration-500">D</button>
-            <button className="h-12 w-12 bg-neutral-200 dark:bg-neutral-800 rounded-lg transition-colors duration-500">E</button>
+            <button className="h-12 w-12 bg-neutral-300 dark:bg-neutral-800 rounded-lg transition-colors duration-500">C</button>
+            <button className="h-12 w-12 bg-neutral-300 dark:bg-neutral-800 rounded-lg transition-colors duration-500">D</button>
+            <button className="h-12 w-12 bg-neutral-300 dark:bg-neutral-800 rounded-lg transition-colors duration-500">E</button>
           </div>
         </div>
 

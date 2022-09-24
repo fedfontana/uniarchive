@@ -5,7 +5,7 @@ export default function DirectoryEntry({ data, path }: { data: BaseDirData; path
     const router = useRouter();
   
     return (
-      <div className="flex flex-col justify-between mx-auto bg-neutral-200 dark:bg-neutral-800 py-3 px-4 rounded-lg w-full gap-3 transition-colors duration-500">
+      <div className="flex flex-col justify-between mx-auto bg-neutral-300 dark:bg-neutral-800 py-3 px-4 rounded-lg w-full gap-3 transition-colors duration-500">
         {/* TOP SECTION -- DIR PATH */}
         <h3 className="text-sm font-sourcecodepro text-neutral-600 dark:text-neutral-300 transition-colors duration-500">
           directory path: /{path.join("/")}/{data.filename}
@@ -17,7 +17,7 @@ export default function DirectoryEntry({ data, path }: { data: BaseDirData; path
           </h2>
           {/* SHOW DIR BUTTON */}
           <button
-            className="self-end bg-blue-400 px-4 py-2 rounded-md"
+            className="self-end bg-blue-400 dark:bg-blue-600 px-4 py-2 rounded-md transition-colors duration-500"
             onClick={() => {
               router.push(`/${path.join("/")}/${data.filename}`);
             }}

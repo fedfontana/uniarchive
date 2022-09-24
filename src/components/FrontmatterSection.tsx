@@ -7,7 +7,7 @@ export default function FrontmatterSection({
   frontmatter: FrontmatterOptions;
 }) {
   return (
-    <span className="flex flex-row items-baseline justify-between mx-auto bg-neutral-200 dark:bg-neutral-800 py-3 px-4 rounded-lg transition-colors duration-500">
+    <span className="flex flex-row items-baseline justify-between mx-auto bg-neutral-300 dark:bg-neutral-800 py-3 px-4 rounded-lg transition-colors duration-500">
       {/* LEFT SECTION */}
       <div className="flex flex-col gap-2">
         {/* TOP LECTURE SECTION */}

@@ -13,7 +13,7 @@ export default function FileEntry({
   }) {
     const router = useRouter();
     return (
-      <div className="flex flex-col justify-between mx-auto bg-neutral-200 dark:bg-neutral-800 py-3 px-4 rounded-lg w-full gap-3 transition-colors duration-500">
+      <div className="flex flex-col justify-between mx-auto bg-neutral-300 dark:bg-neutral-800 py-3 px-4 rounded-lg w-full gap-3 transition-colors duration-500">
         {/* TOP SECTION -- FILE INFO */}
         <span className="flex flex-row justify-between items-baseline">
           {/* FILE PATH */}
@@ -94,7 +94,7 @@ export default function FileEntry({
             <div></div>
           )}
           <button
-            className="self-end bg-blue-400 px-4 py-2 rounded-md"
+            className="self-end bg-blue-400 dark:bg-blue-600 px-4 py-2 rounded-md transition-colors duration-500"
             onClick={() => {
               router.push(`/${path.join("/")}/${data.filename}`);
             }}

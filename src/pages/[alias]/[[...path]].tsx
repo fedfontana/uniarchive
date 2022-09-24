@@ -19,17 +19,10 @@ import FrontmatterSection from "$components/FrontmatterSection";
 import useFocus from "$lib/useFocus";
 import { getData } from "$lib/apiUtils";
 
-interface SuccessProps {
-  error: false;
+interface Props {
   data: DirData | FileData;
   repo: Repository;
 }
-interface FailureProps {
-  error: true;
-  cause: string;
-}
-
-type Props = SuccessProps | FailureProps;
 
 const PathPage: InferGetStaticPropsType<typeof getStaticProps> = (
   props: Props
@@ -59,10 +52,6 @@ const PathPage: InferGetStaticPropsType<typeof getStaticProps> = (
     });
   }, [inputRef, setInputFocus]);
 
-  if (props.error) {
-    return <div>an error occurred. Cause: {props.cause}</div>;
-  }
-
   const { data, repo } = props;
 
   if (data.isDir) {
@@ -76,17 +65,17 @@ const PathPage: InferGetStaticPropsType<typeof getStaticProps> = (
         <div className="my-6">
           <Breadcrumbs path={props.data.path} />
         </div>
-          <input
-            ref={inputRef}
-            autoFocus
-            type="text"
-            placeholder="Search notes..."
-            className="bg-neutral-200 dark:bg-neutral-700 px-6 py-2 rounded-lg flex-grow min-w-[10rem] w-[70%] transition-colors duration-500 md:gap-24 mb-6"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-            }}
-          />
+        <input
+          ref={inputRef}
+          autoFocus
+          type="text"
+          placeholder="Search notes..."
+          className="bg-neutral-200 dark:bg-neutral-700 px-6 py-2 rounded-lg flex-grow min-w-[10rem] w-[70%] transition-colors duration-500 md:gap-24 mb-6"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+          }}
+        />
 
         <div className="flex flex-col gap-4">
           {files.map((entry, idx) => {
@@ -279,34 +268,17 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
   let repo = repos.find((repo) => repo.alias === alias || repo.repo === alias);
   if (repo === undefined) {
-    return {
-      revalidate: revalidate ?? 900,
-      props: {
-        error: true,
-        cause: "REPO NOT FOUND",
-      },
-    };
+    throw new Error("Not found");
   }
 
-  try {
-    let data = await getData(repo, path ?? []);
-    return {
-      revalidate: revalidate ?? 900,
-      props: {
-        error: false,
-        data,
-        repo,
-      },
-    };
-  } catch (e) {
-    return {
-      revalidate: revalidate ?? 900,
-      props: {
-        error: true,
-        cause: (e as Error).message,
-      },
-    };
-  }
+  let data = await getData(repo, path ?? []);
+  return {
+    revalidate: revalidate ?? 900,
+    props: {
+      data,
+      repo,
+    },
+  };
 };
 
 export const getStaticPaths: GetStaticPaths = async () => {

@@ -38,7 +38,7 @@ export async function getData(repo: Repository, path: string[]) {
     const decoded = await res.json();
     if (decoded instanceof Array) { //Directory
         const dirContent = (decoded as DirEntry[]).filter((entry) => isEntryValid(entry, repo));
-        const content = (
+        let content = (
             await Promise.allSettled(
                 dirContent.map(async (entry) => {
                     if (entry.type === "dir") {
@@ -57,15 +57,37 @@ export async function getData(repo: Repository, path: string[]) {
                     return fileData;
                 })
             )
-        )
-            .filter((res) => {
+        ).filter((res) => {
                 return res.status === "fulfilled";
             })
             .map((v) => (v as PromiseFulfilledResult<DataEntry>).value);
+
+        //TODO test this
+        const sorted = content.sort((a, b) => {
+            // sort directories first
+            if(a.isDir && !b.isDir) return -1;
+            if(b.isDir && !a.isDir) return 1;
+            // if both are directories, then sort them alphabetically
+            if(a.isDir && b.isDir) return Number(a.filename > b.filename);
+            // if both are files
+            const aLectureDate = (a as BaseFileData).frontmatter.lecture?.date !== undefined ? new Date((a as BaseFileData).frontmatter?.lecture?.date as string) : undefined;
+            const bLectureDate = (b as BaseFileData).frontmatter.lecture?.date !== undefined ? new Date((b as BaseFileData).frontmatter?.lecture?.date as string) : undefined;
+            // sort them by lecture date descending
+            if(aLectureDate && !bLectureDate) return 1;
+            if(bLectureDate && !aLectureDate) return -1;
+            if(aLectureDate && bLectureDate && aLectureDate !== bLectureDate) return Number(aLectureDate > bLectureDate);
+            // if they have the same lecture date, then sort them alphabetically (lectures with no name will be sorted last)
+            const aTitle = (a as BaseFileData).frontmatter.lecture?.title;
+            const bTitle = (b as BaseFileData).frontmatter.lecture?.title;
+            if(aTitle && !bTitle) return 1;
+            if(bTitle && !aTitle) return -1;
+            if(aTitle && bTitle) return Number(aTitle > bTitle);
+            return 0;
+        })
         const dir: DirData = {
             isDir: true,
             path: [repo.alias ?? repo.repo, ...path],
-            files: content,
+            files: sorted,
         };
         return dir;
     }

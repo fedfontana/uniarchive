@@ -76,24 +76,17 @@ const PathPage: InferGetStaticPropsType<typeof getStaticProps> = (
         <div className="my-6">
           <Breadcrumbs path={props.data.path} />
         </div>
-        <div className="flex flex-col md:flex-row gap-4 md:gap-24 mb-6">
           <input
             ref={inputRef}
             autoFocus
             type="text"
             placeholder="Search notes..."
-            className="bg-neutral-200 dark:bg-neutral-700 px-6 py-2 rounded-lg flex-grow min-w-[10rem] w-[70%] transition-colors duration-500"
+            className="bg-neutral-200 dark:bg-neutral-700 px-6 py-2 rounded-lg flex-grow min-w-[10rem] w-[70%] transition-colors duration-500 md:gap-24 mb-6"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
             }}
           />
-          <div className="flex flex-row gap-2">
-            <button className="h-12 w-12 bg-neutral-300 dark:bg-neutral-800 rounded-lg transition-colors duration-500">C</button>
-            <button className="h-12 w-12 bg-neutral-300 dark:bg-neutral-800 rounded-lg transition-colors duration-500">D</button>
-            <button className="h-12 w-12 bg-neutral-300 dark:bg-neutral-800 rounded-lg transition-colors duration-500">E</button>
-          </div>
-        </div>
 
         <div className="flex flex-col gap-4">
           {files.map((entry, idx) => {

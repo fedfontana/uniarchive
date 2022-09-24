@@ -12,13 +12,13 @@ function Breadcrumbs({ path }: { path: string[] }) {
             return (
               <li key={`breadcrumb-${idx}`}>
                 <Link passHref href={`/${urlSlug}`}>
-                  <a className="text-blue-500 hover:underline">{segment}</a>
+                  <a className="text-blue-500 hover:underline font-semibold">{segment}</a>
                 </Link>
                 {" > "}
               </li>
             );
           }
-          return <li key={`breadcrumb-${idx}`}>{segment}</li>;
+          return <li key={`breadcrumb-${idx}`} className="font-semibold">{segment}</li>;
         })}
       </ul>
     </div>

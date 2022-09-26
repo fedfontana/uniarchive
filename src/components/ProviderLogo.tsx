@@ -1,7 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
 
-//TODO fix gitlab icon having some y margin
-
 export default function ProviderLogo({
   provider,
 }: {

@@ -13,10 +13,19 @@ export interface TreeEntry {
     path: string;
     mode: string;
     type: "blob" | "tree";
+}
+
+export interface GithubTreeEntry extends TreeEntry {
     sha: string;
     size: number;
     url: string;
 }
+
+export interface GitlabTreeEntry extends TreeEntry {
+    id: string,
+    name: string,
+}
+
 
 export interface BaseDirData {
     filename: string,
@@ -45,14 +54,14 @@ export interface FileData {
 export interface FrontmatterOptions {
     lastUpdated?: string,
     lecture?: {
-      date?: string,
-      topics?: string[],
-      title?: string,
-      professor?: string
+        date?: string,
+        topics?: string[],
+        title?: string,
+        professor?: string
     }
-  }
+}
 
-  
+
 export interface MarkdownFile {
     frontmatter: FrontmatterOptions;
     body: string;

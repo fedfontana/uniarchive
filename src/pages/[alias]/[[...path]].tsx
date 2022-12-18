@@ -2,6 +2,8 @@ import {
   DataEntry,
   DirData,
   FileData,
+  GithubTreeEntry,
+  GitlabTreeEntry,
   Repository,
   TreeEntry,
 } from "$src/types";
@@ -299,13 +301,39 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   };
 };
 
+
 export const getStaticPaths: GetStaticPaths = async () => {
   const { repos } = config;
 
   let paths: { alias: string; path: string[] | undefined }[] = [];
   for (const repo of repos) {
-    if (repo.provider !== "github.com" && repo.provider !== undefined) {
-      throw new Error("NOT SUPPORTED");
+    if (repo.provider === "gitlab.com") {
+      //TODO I think that this only works for projects/subprojects
+      const apiUrl = `https://gitlab.com/api/v4/projects/${encodeURIComponent(repo.repo)}/repository/tree?recursive=true&limit=2000&ref=${repo.branch ?? "main"}&path=${repo.baseDirectory ?? ""}`;
+      const res = await fetch(apiUrl);
+      if (!res.ok) {
+        throw new Error(`NETWORKING at ${apiUrl}`);
+      }
+      const decoded: GitlabTreeEntry[] = await res.json();
+      const tree = decoded.filter(entry => isEntryValid(entry, repo));
+      console.log(tree);
+      paths = paths.concat(
+        tree.map((entry) => {
+          let newPath = entry.path;
+          if (
+            repo.baseDirectory !== undefined &&
+            repo.baseDirectory !== "" &&
+            entry.path.startsWith(repo.baseDirectory)
+          ) {
+            newPath = entry.path.slice(repo.baseDirectory.length + 1);
+          }
+          return {
+            alias: repo.alias ?? repo.repo,
+            path: newPath === "" ? undefined : newPath.split("/"),
+          };
+        })
+      );
+      continue;
     }
 
     const apiUrl = `https://api.github.com/repos/${repo.username}/${
@@ -321,7 +349,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
     if (!res.ok) {
       throw new Error("NETWORKING");
     }
-    const decoded: TreeEntry[] = (await res.json()).tree;
+    const decoded: GithubTreeEntry[] = (await res.json()).tree;
 
     const tree = decoded.filter((entry) => isEntryValid(entry, repo));
     paths = paths.concat(

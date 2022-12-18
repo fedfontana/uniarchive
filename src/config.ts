@@ -23,6 +23,16 @@ const repos: Config = {
             ignoreFileNames: ["README.md"],
             baseDirectory: "",
         },
+        {
+            provider: "gitlab.com",
+            username: "fedfontana",
+            repo: "prova-api/subgroup-1/project-1",
+            alias: "project-1",
+            courseName: "Project1 from gitlab",
+            branch: "main",
+            ignoreFileNames: [],
+            baseDirectory: "",
+        },
     ],
 };
 export default repos; 
